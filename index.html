@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="I Cobra BBQ">
+<meta name="theme-color" content="#0f0d0b">
+<title>I Cobra BBQ — Competition Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+:root {
+  --pit: #0f0d0b;
+  --pit2: #1a1612;
+  --pit3: #252018;
+  --pit4: #2e2820;
+  --ember: #e8460a;
+  --ember2: #f97316;
+  --ember3: #fbbf24;
+  --smoke: #6b6560;
+  --smoke2: #9b948d;
+  --smoke3: #ccc5bc;
+  --bone: #f5f0e8;
+  --bone2: #e8e0d0;
+  --green: #22c55e;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --r: 6px;
+  font-family: 'DM Sans', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--pit);
+  color: var(--bone);
+  font-size: 14px;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.app::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,.06) 2px, rgba(0,0,0,.06) 4px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* SCREENS */
+.screen { display: none; flex-direction: column; flex: 1; position: relative; z-index: 1; }
+.screen.active { display: flex; }
+
+/* TOPBAR */
+.topbar {
+  padding: 14px 16px 10px;
+  padding-top: max(14px, env(safe-area-inset-top));
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+  background: var(--pit2);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.topbar-logo { font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 2px; color: var(--bone); flex: 1; line-height: 1; }
+.topbar-sub { font-size: 10px; color: var(--smoke2); letter-spacing: 1px; text-transform: uppercase; display: block; font-weight: 300; }
+.live-badge { background: var(--ember); color: #fff; font-size: 11px; font-family: 'DM Mono', monospace; padding: 3px 8px; border-radius: 4px; letter-spacing: .5px; font-weight: 500; }
+.bell-btn { background: none; border: none; color: var(--smoke2); cursor: pointer; font-size: 20px; padding: 4px; line-height: 1; }
+.back-btn { background: none; border: none; color: var(--smoke2); cursor: pointer; font-size: 20px; padding: 2px; line-height: 1; }
+
+/* TABS */
+.tabs { display: flex; background: var(--pit2); border-bottom: 1px solid rgba(255,255,255,.06); position: sticky; top: 57px; z-index: 40; }
+.tab { flex: 1; padding: 10px 4px; text-align: center; font-size: 11px; letter-spacing: .8px; text-transform: uppercase; cursor: pointer; color: var(--smoke); border-bottom: 2px solid transparent; transition: all .2s; font-weight: 500; }
+.tab.active { color: var(--ember2); border-bottom-color: var(--ember2); }
+
+/* CONTENT */
+.content { flex: 1; overflow-y: auto; padding: 14px 14px 90px; -webkit-overflow-scrolling: touch; }
+
+/* SECTION LABEL */
+.sec { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--smoke); margin: 16px 0 8px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
+.sec::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,.06); }
+.sec:first-child { margin-top: 4px; }
+
+/* CARDS */
+.card { background: var(--pit2); border: 1px solid rgba(255,255,255,.08); border-radius: var(--r); padding: 12px 14px; margin-bottom: 8px; transition: border-color .2s; }
+.card:hover { border-color: rgba(255,255,255,.14); }
+.card.urgent { border-left: 3px solid var(--red); background: rgba(239,68,68,.07); border-radius: 0 var(--r) var(--r) 0; }
+.card.active-step { border-left: 3px solid var(--ember2); border-radius: 0 var(--r) var(--r) 0; }
+.card.upcoming { border-left: 3px solid rgba(255,255,255,.12); border-radius: 0 var(--r) var(--r) 0; }
+.card.done-card { opacity: .38; }
+
+.card-row { display: flex; align-items: flex-start; gap: 10px; }
+.card-time { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--ember2); min-width: 42px; font-weight: 500; padding-top: 1px; }
+.card-title { font-size: 14px; font-weight: 500; flex: 1; line-height: 1.35; color: var(--bone); }
+.done-icon { font-size: 18px; cursor: pointer; color: var(--smoke); padding: 2px; transition: color .15s; flex-shrink: 0; }
+.done-icon.checked { color: var(--green); }
+
+/* PILLS */
+.pills { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
+.pill { font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 20px; letter-spacing: .4px; text-transform: uppercase; }
+.p-chicken { background: rgba(59,130,246,.2); color: #93c5fd; }
+.p-ribs { background: rgba(239,68,68,.2); color: #fca5a5; }
+.p-pork { background: rgba(34,197,94,.2); color: #86efac; }
+.p-brisket { background: rgba(251,191,36,.2); color: #fde68a; }
+.p-person { background: rgba(255,255,255,.07); color: var(--smoke2); border: 0.5px solid rgba(255,255,255,.1); }
+.p-alert { background: rgba(232,70,10,.15); color: var(--ember2); border: 0.5px solid rgba(232,70,10,.3); cursor: pointer; }
+
+/* TEMP */
+.temp { display: inline-flex; align-items: center; gap: 4px; background: rgba(232,70,10,.15); border: 0.5px solid rgba(232,70,10,.3); color: var(--ember2); font-size: 11px; font-family: 'DM Mono', monospace; padding: 2px 8px; border-radius: 4px; margin-top: 6px; }
+
+/* EXPAND */
+.expand-btn { font-size: 11px; color: var(--smoke); cursor: pointer; margin-top: 8px; display: inline-flex; align-items: center; gap: 4px; letter-spacing: .4px; text-transform: uppercase; user-select: none; }
+.detail { background: var(--pit3); border-radius: 4px; padding: 10px 12px; margin-top: 8px; font-size: 13px; color: var(--smoke2); line-height: 1.65; display: none; }
+.detail.open { display: block; }
+
+/* CONSEGNE */
+.del-row { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,.05); }
+.del-row:last-child { border-bottom: none; }
+.del-name { font-size: 13px; font-weight: 500; flex: 1; color: var(--bone); }
+.del-clock { font-family: 'DM Mono', monospace; font-size: 14px; color: var(--smoke2); margin-right: 10px; }
+.del-countdown { font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500; min-width: 60px; text-align: right; }
+.del-countdown.hot { color: var(--ember2); }
+.del-countdown.done2 { color: var(--smoke); }
+
+/* STAT GRID */
+.stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.stat { background: var(--pit2); border: 1px solid rgba(255,255,255,.07); border-radius: var(--r); padding: 12px; }
+.stat-val { font-family: 'Bebas Neue', sans-serif; font-size: 28px; color: var(--ember2); letter-spacing: 1px; line-height: 1; }
+.stat-lbl { font-size: 11px; color: var(--smoke); margin-top: 3px; letter-spacing: .4px; text-transform: uppercase; }
+.stat-fase { font-size: 10px; color: var(--smoke2); margin-top: 2px; }
+
+/* PROGRESS */
+.prog-wrap { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 12px; color: var(--smoke); }
+.prog-bar { height: 3px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, var(--ember), var(--ember2)); border-radius: 2px; transition: width .4s; }
+
+/* CHECKLIST */
+.ck-cat { font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--smoke); margin: 14px 0 6px; font-weight: 500; }
+.ck-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
+.ck-item:last-child { border-bottom: none; }
+.ck-item input[type=checkbox] { width: 16px; height: 16px; margin-top: 1px; accent-color: var(--ember); cursor: pointer; flex-shrink: 0; }
+.ck-item label { font-size: 13px; color: var(--bone2); cursor: pointer; flex: 1; line-height: 1.4; }
+.ck-item label.done { text-decoration: line-through; color: var(--smoke); }
+
+/* FILTERS */
+.filters { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 10px; }
+.fb { font-size: 11px; padding: 4px 9px; border-radius: 20px; border: 1px solid rgba(255,255,255,.12); background: transparent; cursor: pointer; color: var(--smoke2); text-transform: uppercase; letter-spacing: .5px; transition: all .15s; }
+.fb.on { background: var(--ember); color: #fff; border-color: var(--ember); }
+
+/* BOTTOM NAV */
+.nav { display: flex; border-top: 1px solid rgba(255,255,255,.07); background: var(--pit2); position: fixed; bottom: 0; left: 0; right: 0; max-width: 480px; margin: 0 auto; z-index: 50; padding-bottom: env(safe-area-inset-bottom); }
+.nb { flex: 1; padding: 10px 4px 8px; text-align: center; cursor: pointer; font-size: 10px; color: var(--smoke); border: none; background: transparent; display: flex; flex-direction: column; align-items: center; gap: 3px; letter-spacing: .4px; text-transform: uppercase; transition: color .15s; }
+.nb i { font-size: 20px; }
+.nb.active { color: var(--ember2); }
+
+/* WELCOME */
+.welcome-hero { padding: 32px 16px 16px; background: linear-gradient(180deg, rgba(232,70,10,.13) 0%, transparent 100%); }
+.hero-logo { font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: 5px; color: var(--bone); line-height: 1; margin-bottom: 0; }
+.hero-sub2 { font-family: 'Bebas Neue', sans-serif; font-size: 24px; letter-spacing: 4px; color: var(--ember); line-height: 1; }
+.hero-line { width: 48px; height: 2px; background: var(--ember); margin: 14px 0; }
+.hero-desc { font-size: 12px; color: var(--smoke2); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 300; }
+
+.mode-card { background: var(--pit2); border: 1px solid rgba(255,255,255,.09); border-radius: 10px; padding: 16px; margin: 0 0 10px; cursor: pointer; display: flex; align-items: center; gap: 14px; transition: all .2s; }
+.mode-card:hover, .mode-card:active { border-color: var(--ember); background: rgba(232,70,10,.08); }
+.mode-icon { width: 48px; height: 48px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; background: rgba(232,70,10,.15); color: var(--ember2); flex-shrink: 0; }
+.mode-title { font-family: 'Bebas Neue', sans-serif; font-size: 18px; letter-spacing: 1.5px; color: var(--bone); line-height: 1; }
+.mode-desc { font-size: 12px; color: var(--smoke2); margin-top: 3px; line-height: 1.4; }
+.mode-arrow { color: var(--smoke); margin-left: auto; flex-shrink: 0; font-size: 18px; }
+
+/* SETUP */
+.setup-field { margin-bottom: 16px; }
+.setup-field label { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--smoke2); display: block; margin-bottom: 5px; font-weight: 500; }
+.setup-field input, .setup-field select { width: 100%; font-size: 15px; padding: 9px 12px; border-radius: var(--r); border: 1px solid rgba(255,255,255,.12); background: var(--pit3); color: var(--bone); font-family: 'DM Mono', monospace; -webkit-appearance: none; }
+.setup-field input:focus, .setup-field select:focus { outline: none; border-color: var(--ember); }
+.setup-note { font-size: 11px; color: var(--smoke); margin-top: 3px; }
+.btn-primary { width: 100%; padding: 13px; background: var(--ember); color: #fff; border: none; border-radius: var(--r); font-size: 14px; font-weight: 500; cursor: pointer; letter-spacing: 1.5px; text-transform: uppercase; font-family: 'DM Sans', sans-serif; margin-top: 6px; transition: background .15s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.btn-primary:hover { background: var(--ember2); }
+.btn-sec { width: 100%; padding: 10px; background: transparent; color: var(--smoke2); border: 1px solid rgba(255,255,255,.1); border-radius: var(--r); font-size: 13px; cursor: pointer; margin-top: 6px; letter-spacing: .5px; text-transform: uppercase; font-family: 'DM Sans', sans-serif; }
+
+/* ALERT MODAL */
+.modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.8); display: none; align-items: center; justify-content: center; z-index: 200; padding: 20px; }
+.modal-box { background: var(--pit2); border: 1px solid rgba(232,70,10,.5); border-radius: 10px; padding: 22px; width: 100%; max-width: 340px; }
+.modal-icon { font-size: 28px; color: var(--ember); margin-bottom: 8px; }
+.modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1.5px; color: var(--bone); margin-bottom: 6px; line-height: 1.2; }
+.modal-body { font-size: 13px; color: var(--smoke2); line-height: 1.65; margin-bottom: 16px; white-space: pre-line; }
+.modal-close { width: 100%; padding: 11px; background: var(--ember); color: #fff; border: none; border-radius: var(--r); font-size: 13px; font-weight: 500; cursor: pointer; letter-spacing: 1px; text-transform: uppercase; font-family: 'DM Sans', sans-serif; }
+
+/* VERSION BADGE */
+.version { text-align: center; font-size: 10px; color: var(--smoke); padding: 10px 0 6px; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- ═══════════════════════════ WELCOME ═══════════════════════════ -->
+<div class="screen active" id="screen-welcome">
+  <div class="welcome-hero">
+    <div class="hero-logo">I COBRA</div>
+    <div class="hero-sub2">BBQ TEAM</div>
+    <div class="hero-line"></div>
+    <div class="hero-desc">KCBS Master Series — Competition Manager</div>
+  </div>
+  <div style="padding: 16px 14px;">
+    <div class="sec">Modalità gara</div>
+    <div class="mode-card" onclick="selectMode('master')">
+      <div class="mode-icon"><i class="ti ti-flame"></i></div>
+      <div>
+        <div class="mode-title">Master Series</div>
+        <div class="mode-desc">Sabato + domenica — 4 proteine<br>Chicken · Ribs · Pork · Brisket</div>
+      </div>
+      <i class="ti ti-chevron-right mode-arrow"></i>
+    </div>
+    <div class="mode-card" onclick="selectMode('onemeat')">
+      <div class="mode-icon"><i class="ti ti-target"></i></div>
+      <div>
+        <div class="mode-title">One Meat</div>
+        <div class="mode-desc">Simulazione — Ribs e/o Chicken<br>Orario consegna personalizzabile</div>
+      </div>
+      <i class="ti ti-chevron-right mode-arrow"></i>
+    </div>
+    <div class="version">v2.0 — I Cobra BBQ 2026</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ SETUP ═══════════════════════════ -->
+<div class="screen" id="screen-setup">
+  <div class="topbar">
+    <button class="back-btn" onclick="showScreen('screen-welcome')" aria-label="indietro"><i class="ti ti-arrow-left"></i></button>
+    <div style="flex:1">
+      <span class="topbar-logo" id="setup-title">Setup Consegne</span>
+    </div>
+  </div>
+  <div class="content">
+    <!-- MASTER FIELDS -->
+    <div id="master-fields">
+      <div class="sec">Orari consegna ufficiali</div>
+      <div class="setup-field"><label>Consegna Chicken</label><input type="time" id="t-chicken" value="12:00"></div>
+      <div class="setup-field"><label>Consegna Ribs</label><input type="time" id="t-ribs" value="12:30"></div>
+      <div class="setup-field"><label>Consegna Pork</label><input type="time" id="t-pork" value="12:55"></div>
+      <div class="setup-field"><label>Consegna Brisket</label><input type="time" id="t-brisket" value="13:30"></div>
+      <div class="sec">Configurazione Smoker</div>
+      <div class="setup-field">
+        <label>Ore totali brisket (dal fuoco alla consegna)</label>
+        <input type="number" id="offset-brisket" value="9" min="7" max="12" style="width:80px">
+        <div class="setup-note">Default 9h — WSM 57" a 300°F stabili</div>
+      </div>
+    </div>
+    <!-- ONE MEAT FIELDS -->
+    <div id="onemeat-fields" style="display:none">
+      <div class="sec">Configurazione</div>
+      <div class="setup-field">
+        <label>Proteine in gara</label>
+        <select id="om-protein">
+          <option value="both">Ribs + Chicken</option>
+          <option value="ribs">Solo Ribs</option>
+          <option value="chicken">Solo Chicken</option>
+        </select>
+      </div>
+      <div class="setup-field"><label>Consegna Ribs</label><input type="time" id="om-t-ribs" value="16:00"></div>
+      <div class="setup-field"><label>Consegna Chicken</label><input type="time" id="om-t-chicken" value="15:30"></div>
+    </div>
+    <button class="btn-primary" onclick="startComp()"><i class="ti ti-player-play"></i> Avvia gara</button>
+    <button class="btn-sec" onclick="showScreen('screen-welcome')">Indietro</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ MAIN ═══════════════════════════ -->
+<div class="screen" id="screen-main">
+  <div class="topbar">
+    <div style="flex:1">
+      <span class="topbar-logo">I Cobra BBQ</span>
+      <span class="topbar-sub" id="mode-label">Master Series</span>
+    </div>
+    <span class="live-badge" id="live-clock">--:--</span>
+    <button class="bell-btn" onclick="demoAlert()" aria-label="test notifica"><i class="ti ti-bell"></i></button>
+  </div>
+  <div class="tabs">
+    <div class="tab active" id="tab-now" onclick="switchTab('now')">Adesso</div>
+    <div class="tab" id="tab-timeline" onclick="switchTab('timeline')">Timeline</div>
+    <div class="tab" id="tab-proteine" onclick="switchTab('proteine')">Proteine</div>
+    <div class="tab" id="tab-check" onclick="switchTab('check')">Check</div>
+  </div>
+
+  <!-- PANE: ADESSO -->
+  <div class="content" id="pane-now">
+    <div id="urgent-section"></div>
+    <div class="sec">Prossima attività</div>
+    <div id="next-section"></div>
+    <div class="sec">Consegne</div>
+    <div class="card" id="delivery-card"></div>
+    <div class="sec">In corso</div>
+    <div id="active-section"></div>
+  </div>
+
+  <!-- PANE: TIMELINE -->
+  <div class="content" id="pane-timeline" style="display:none">
+    <div class="filters" id="f-proteina">
+      <button class="fb on" onclick="setFilter('p','all',this)">Tutti</button>
+      <button class="fb" onclick="setFilter('p','chicken',this)">Chicken</button>
+      <button class="fb" onclick="setFilter('p','ribs',this)">Ribs</button>
+      <button class="fb" onclick="setFilter('p','pork',this)">Pork</button>
+      <button class="fb" onclick="setFilter('p','brisket',this)">Brisket</button>
+    </div>
+    <div class="filters" id="f-persona">
+      <button class="fb on" onclick="setFilter('pe','all',this)">Tutti</button>
+      <button class="fb" onclick="setFilter('pe','Marco',this)">Marco</button>
+      <button class="fb" onclick="setFilter('pe','Matteo',this)">Matteo</button>
+      <button class="fb" onclick="setFilter('pe','Simone',this)">Simone</button>
+    </div>
+    <div id="timeline-list"></div>
+  </div>
+
+  <!-- PANE: PROTEINE -->
+  <div class="content" id="pane-proteine" style="display:none">
+    <div class="stat-grid" id="proteina-stats"></div>
+    <div id="proteina-prog"></div>
+  </div>
+
+  <!-- PANE: CHECKLIST -->
+  <div class="content" id="pane-check" style="display:none">
+    <div id="checklist-wrap"></div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="nav">
+    <button class="nb active" id="nav-now" onclick="switchTab('now')"><i class="ti ti-clock"></i>Adesso</button>
+    <button class="nb" id="nav-timeline" onclick="switchTab('timeline')"><i class="ti ti-list"></i>Timeline</button>
+    <button class="nb" id="nav-proteine" onclick="switchTab('proteine')"><i class="ti ti-meat"></i>Proteine</button>
+    <button class="nb" id="nav-check" onclick="switchTab('check')"><i class="ti ti-checklist"></i>Check</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ MODAL ═══════════════════════════ -->
+<div class="modal-bg" id="modal">
+  <div class="modal-box">
+    <div class="modal-icon"><i class="ti ti-bell-ringing"></i></div>
+    <div class="modal-title" id="modal-title">Alert gara</div>
+    <div class="modal-body" id="modal-body">—</div>
+    <button class="modal-close" onclick="closeModal()">OK, capito</button>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<script>
+// ─── STATE ───────────────────────────────────────────────────────
+let MODE = 'master';
+let DT = {};          // delivery times in minutes
+let STEPS = [];       // all steps
+let fprot = 'all';    // filter proteina
+let fpers = 'all';    // filter persona
+let DONE = {};        // completed step ids
+let ACFG = {};        // alert config per step
+let CHKSTATE = {};    // checklist state
+let clockInterval = null;
+const NM = { chicken: 'Chicken', ribs: 'Ribs', pork: 'Pork', brisket: 'Brisket' };
+
+// ─── UTILS ───────────────────────────────────────────────────────
+function t2m(s) { const [h, m] = s.split(':').map(Number); return h * 60 + m; }
+function m2t(m) { const mm = ((m % 1440) + 1440) % 1440; return String(Math.floor(mm / 60)).padStart(2,'0') + ':' + String(mm % 60).padStart(2,'0'); }
+function nowM() { const n = new Date(); return n.getHours() * 60 + n.getMinutes(); }
+
+// ─── NAVIGATION ──────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function selectMode(m) {
+  MODE = m;
+  document.getElementById('master-fields').style.display = m === 'master' ? 'block' : 'none';
+  document.getElementById('onemeat-fields').style.display = m === 'onemeat' ? 'block' : 'none';
+  document.getElementById('setup-title').textContent = m === 'master' ? 'Setup Consegne' : 'One Meat — Setup';
+  showScreen('screen-setup');
+}
+
+function startComp() {
+  if (MODE === 'master') {
+    DT = {
+      chicken: t2m(document.getElementById('t-chicken').value),
+      ribs:    t2m(document.getElementById('t-ribs').value),
+      pork:    t2m(document.getElementById('t-pork').value),
+      brisket: t2m(document.getElementById('t-brisket').value)
+    };
+    STEPS = buildMaster();
+  } else {
+    const p = document.getElementById('om-protein').value;
+    DT = {
+      ribs:    t2m(document.getElementById('om-t-ribs').value),
+      chicken: t2m(document.getElementById('om-t-chicken').value)
+    };
+    STEPS = buildOneMeat(p);
+  }
+  document.getElementById('mode-label').textContent = MODE === 'master' ? 'Master Series' : 'One Meat';
+  showScreen('screen-main');
+  renderAll();
+  if (clockInterval) clearInterval(clockInterval);
+  clockInterval = setInterval(tick, 30000);
+  tick();
+}
+
+function switchTab(t) {
+  ['now','timeline','proteine','check'].forEach(x => {
+    document.getElementById('pane-' + x).style.display = x === t ? 'block' : 'none';
+    document.getElementById('tab-' + x).classList.toggle('active', x === t);
+    document.getElementById('nav-' + x).classList.toggle('active', x === t);
+  });
+  if (t === 'now') renderNow();
+  if (t === 'timeline') renderTimeline();
+  if (t === 'proteine') renderProteine();
+}
+
+// ─── BUILD STEPS: MASTER SERIES ──────────────────────────────────
+function buildMaster() {
+  const c = DT.chicken, r = DT.ribs, p = DT.pork, b = DT.brisket;
+  const off = Number(document.getElementById('offset-brisket').value) || 9;
+  return [
+    // BRISKET
+    { id:'b0',  t: b - off*60,      ti:'Accendi WSM 57" — brisket', pr:'brisket', pe:['Simone'], temp:'Target 300°F', det:'Prepara WSM 57" con carbone e chunks pecan.\nRaggiungi e stabilizza 300°F prima di caricare il brisket.\nAggiungi cipolle bionde sul carbone.' },
+    { id:'b1',  t: b - off*60 + 30, ti:'Rub brisket', pr:'brisket', pe:['Marco'], det:'Fat side: solo MC Blanco.\nMeat side: MC Blanco + Kosmos GJ + BH Sweet&Savory.\nBinder: Worcestershire. Lascia riposare 15 min.' },
+    { id:'pk_w',t: b - off*60 + 30, ti:'Accendi WSM 18" + drum', pr:'pork', pe:['Simone'], temp:'300°F entrambi', det:'WSM 18" per il pork. Drum smoker per le ribs.\nEntrambi a 300°F stabili prima del carico carne.' },
+    { id:'pk0', t: b - off*60 + 40, ti:'Rub pork (butt + money)', pr:'pork', pe:['Marco'], det:'BH Sweet&Savory + MC Blanco + Kosmos GJ.\nBinder Worcestershire su butt.\nMoney muscle: doppio strato di rub. Riposa 20 min.' },
+    { id:'b2',  t: b - off*60 + 75, ti:'Brisket → WSM 57" piano alto', pr:'brisket', pe:['Marco'], temp:'300-310°F', det:'Pecan + cipolle sul carbone.\nTermometro nel flat. Ruota griglia 180° ogni 15 min.\nSpray duck fat sui lati ogni 30 min.\nObiettivo: foil a 150-160°F interno.' },
+    { id:'pk1', t: b - off*60 + 75, ti:'Pork butt → WSM 18"', pr:'pork', pe:['Marco'], temp:'300°F', det:'1 chunk pecan + 2-3 cipolle. Fat cap UP.\nSpray butter/ghee dopo 40 min.\nObiettivo: foil a 165°F interno.' },
+    // RIBS + CHICKEN PREP
+    { id:'ck0', t: r - 6*60,        ti:'Tira fuori injection chicken dal frigo', pr:'chicken', pe:['Matteo'], det:'Heat Riles Chicken Injection deve essere a temperatura ambiente prima di iniettare.\nPrepara siringa e ago.' },
+    { id:'rb0', t: r - 6*60,        ti:'Rub ribs — lato ossa', pr:'ribs', pe:['Marco'], det:'Kosmos GJ + BH Sweet&Savory sul lato ossa.\nSenza binder.' },
+    { id:'ck1', t: r - 6*60 + 30,   ti:'Injection chicken', pr:'chicken', pe:['Matteo'], det:'Togli dalla brine, asciuga con scottex.\nForma cuscino/burrito, impellicola ogni coscia singolarmente.\nInietta da impellicolate — non si perdono i succhi.\nCambro freddo fino a 2h prima della consegna chicken.' },
+    { id:'rb1', t: r - 5*60 + 30,   ti:'Rub ribs — lato carne', pr:'ribs', pe:['Marco'], det:'Kosmos GJ + BH Sweet&Savory sul lato carne.' },
+    { id:'rb2', t: r - 5*60,        ti:'Ribs → drum', pr:'ribs', pe:['Marco','Simone'], temp:'300°F', det:'Pecan + cipolle + water pan (sinistra camino).\nRuota griglia 180° ogni 15 min!\nA 30 min: 2° rub e ruota 90°.' },
+    // RIBS SMOKE
+    { id:'rb3', t: r - 4*60 + 30,   ti:'Ribs — 2° rub + ruota 90°', pr:'ribs', pe:['Marco'], det:'Pulisci sangue con scottex se serve.\nSecondo giro di rub. Ruota 90°.\nContinua rotazione griglia ogni 15 min.' },
+    { id:'rb4', t: r - 4*60,        ti:'Ribs — volta meat side DOWN', pr:'ribs', pe:['Marco'], det:'Fai friggere il lato ossa contro la griglia.\nContinua a girare la griglia ogni 15 min.' },
+    { id:'pk2', t: r - 4*60 + 30,   ti:'Foil pork butt', pr:'pork', pe:['Matteo'], det:'Vassoio alluminio.\n50g burro + metà liquid wrap + rub sulla carne.\nTermometro nel centro del butt.\nChiudi bene con stagnola doppia. Rimetti in WSM 18".' },
+    { id:'lw',  t: r - 4*60,        ti:'Prepara liquid wrap brisket', pr:'brisket', pe:['Matteo'], det:'1L brodo manzo + 100g burro + ½ cup BH Beef Marinade Mix.\nRiscalda leggermente. Tienilo pronto prima di aprire il brisket.' },
+    { id:'pk3', t: r - 3*60 + 45,   ti:'Foil money muscle ~160-170°F', pr:'pork', pe:['Matteo'], temp:'160-170°F', det:'50g burro + restante liquid wrap.\nSpray butter + rub. Termometro al centro.\nChiudi doppio stagnola e torna in WSM.' },
+    { id:'b3',  t: r - 3*60 + 30,   ti:'Foil brisket ~150-160°F', pr:'brisket', pe:['Marco'], temp:'150-160°F', det:'Point e flat in vassoi SEPARATI!\n50g burro + metà wrap per vassoio. Chiudi bene.\nTorna in WSM. Obiettivo: flat 205-210°F / point 210-215°F.' },
+    { id:'rb5', t: r - 3*60 + 15,   ti:'Foil ribs', pr:'ribs', pe:['Marco'], det:'Doppia stagnola. 100g burro al centro.\nRibs MEAT SIDE UP.\nBH Tennessee + BH Raspberry + zucchero di canna.\nChiudi: lato lungo poi corti.' },
+    // CHICKEN PREP
+    { id:'ck2', t: c - 3*60 + 30,   ti:'Prep chicken — rub + pizza pan', pr:'chicken', pe:['Matteo'], det:'Togli dalla pellicola. Pelle verso il basso.\nRub BH Sweet&Savory lato carne.\nChiudi a cuscino, rub lato pelle.\nMetti su pizza pan spruzzato duck fat.' },
+    // RIBS CHECK + REST
+    { id:'rb6', t: r - 2*60 + 50,   ti:'Apri foil ribs — check 160-170°F', pr:'ribs', pe:['Marco'], temp:'160-170°F', det:'Apri, verifica temperatura interna.\nGira MEAT SIDE DOWN e richiudi bene.' },
+    { id:'rb7', t: r - 2*60 + 30,   ti:'Ribs → rest cambro caldo', pr:'ribs', pe:['Marco'], temp:'200-210°F + tenderness', det:'Sonda deve entrare e uscire senza resistenza.\nIn cambro caldo. Totale drum: circa 2h45.' },
+    // CHICKEN SMOKE
+    { id:'ck3', t: c - 2*60 + 30,   ti:'Chicken → WSM 57" piano basso', pr:'chicken', pe:['Marco'], temp:'360-370°F', det:'1 chunk pecan + cipolle. Su pizza pan.\nRuota ogni 15 min. Spray duck fat ogni 30 min.\nFoil a 160-170°F interni (~40 min totali).' },
+    { id:'ck4', t: c - 2*60,        ti:'Ruota chicken + spray duck fat', pr:'chicken', pe:['Simone'], det:'Ogni 15 min ruota.\nSpray duck fat ogni 30 min.\nInizia ad abbassare WSM verso 350-330°F.' },
+    { id:'ck5', t: c - 110,         ti:'Foil chicken ~160-170°F', pr:'chicken', pe:['Marco'], temp:'160-170°F', det:'200g burro fuso nel vassoio. Copri.\nWSM a 300-330°F.\nOgni 15 min ruota e controlla. Target: 205-210°F interni.' },
+    // REST CARNE
+    { id:'b4',  t: b - 90,          ti:'Brisket → rest cambro caldo', pr:'brisket', pe:['Marco'], temp:'Flat 205-210°F · Point 210-215°F', det:'Testa tenderness con sonda.\nDiretto in cambro caldo. Rest minimo 60-90 min.' },
+    { id:'pk4', t: p - 90,          ti:'Pork → rest cambro caldo', pr:'pork', pe:['Marco'], temp:'200-205°F + tenderness', det:'Butt ~5h30 totali / Money ~4h30 totali.\nEntrambi in cambro caldo. Sonda senza resistenza.' },
+    { id:'ck6', t: c - 70,          ti:'Chicken → rest cambro caldo', pr:'chicken', pe:['Marco'], temp:'205-210°F', det:'Rest fino a 10 min prima della consegna. Cambro caldo.' },
+    // GLAZE PREP
+    { id:'sg',  t: c - 40,          ti:'Scalda glaze — tutte le proteine', pr:'ribs', pe:['Matteo'], det:'Ribs: 2p BH Original + 1p BH Tennessee + ¼p Smokey Mtn.\nPork: 2p BH Original + 1p BH Tennessee + 1p Smokey Mtn.\nChicken: ½c BH Tennessee + 1c BH Original + 2tsp Smokey Mtn.\nFornello — tieni tutto al caldo.' },
+    { id:'lt',  t: c - 30,          ti:'Prepara garnish — taglia lattuga', pr:'chicken', pe:['Simone'], det:'Lattuga avvolta nella pellicola. Rondelle ~2 cm.\nIn vassoio alluminio, pellicola sulle singole rondelle.\nFrigo. Togli pellicola SOLO al momento del box.' },
+    // CHICKEN GLAZE + BOX
+    { id:'ck7', t: c - 20,          ti:'Chicken — glaze finale', pr:'chicken', pe:['Matteo'], det:'Re-injection con succhi vassoio (piccola pompata).\nImmersione totale nella salsa glaze.\nFinal dust meat side.\n5 min in WSM piano basso per settare la glaze.' },
+    { id:'ck8', t: c - 10,          ti:'Prep box CHICKEN → CONSEGNA ' + m2t(c), pr:'chicken', pe:['tutti'], det:'Garnish nel box.\nVaporizzata acqua + sale fino. Pulisci bordi. Chiudi.' },
+    // RIBS GLAZE + BOX
+    { id:'rb9', t: r - 30,          ti:'Ribs → drum — chips JD, set glaze', pr:'ribs', pe:['Marco'], det:'Ribs nel drum in foil boat MEAT SIDE UP.\nAggiungi chips Jack Daniel\'s. Ruota ogni 15 min.' },
+    { id:'rb8', t: r - 25,          ti:'Ribs — foil boat + glaze + final dust', pr:'ribs', pe:['Marco'], det:'Apri senza togliere il foil — crea boat.\nMaple syrup → glaze abbondante → final dust.' },
+    { id:'rb10',t: r - 20,          ti:'Ribs — taglio e selezione', pr:'ribs', pe:['Marco'], det:'Tagliere MEAT SIDE DOWN.\nMaple syrup + glaze + final dust.\nTaglia singole ribs, gira MEAT SIDE UP, pennella liquido foil.\nSeleziona le più morbide e uniformi.' },
+    { id:'b5',  t: r - 10,          ti:'Brisket → drum BH Smokey Mtn 10-20 min', pr:'brisket', pe:['Marco'], det:'Spennella BH Smokey Mountain su flat e point.\nDrum 10-20 min per settare la glaze.' },
+    { id:'pk5', t: r - 10,          ti:'Money — 10 min drum asciugatura', pr:'pork', pe:['Marco'], det:'Prima della glaze: 10 min nel drum per asciugare i money muscle.' },
+    { id:'pk6', t: r - 7,           ti:'Pulled butt — selezione + glaze', pr:'pork', pe:['Matteo'], det:'Seleziona il pulled.\nFinal dust + liquido vassoio + glaze.\nMescola, chiudi vassoio, tieni al caldo.' },
+    { id:'rb11',t: r - 5,           ti:'Prep box RIBS → CONSEGNA ' + m2t(r), pr:'ribs', pe:['tutti'], det:'6-8 ribs. Salsare i lati. Final dust light se serve.' },
+    // PORK BOX
+    { id:'pk7', t: p - 25,          ti:'Money — immersione totale glaze', pr:'pork', pe:['Marco'], det:'Immersione da interi (NON pennello).\n5-10 min drum per settare la glaze.' },
+    { id:'pk8', t: p - 15,          ti:'Pork — medaglioni + prep box → CONSEGNA ' + m2t(p), pr:'pork', pe:['Marco','Matteo'], det:'Medaglioni spessi 1 dito.\nVassoio: liq. cottura + glaze + final dust.\nPulled nel box + medaglioni sopra.\nTennessee Red + glaze + final dust. Garnish.' },
+    // BRISKET BOX
+    { id:'b6',  t: b - 30,          ti:'Brisket — taglio flat + point', pr:'brisket', pe:['Marco'], det:'POINT: punta V verso addome → strisce verticali → rimuovi fat → cubi ~2cm.\nFLAT: dal lato del point → 6 fette → rimuovi fat sotto.\nPer ogni fetta: BH Smokey Mtn + liq. sgrassato + sale fino.' },
+    { id:'b7',  t: b - 10,          ti:'Prep box BRISKET → CONSEGNA ' + m2t(b), pr:'brisket', pe:['tutti'], det:'6 fette flat + 6 cubi point. Garnish.' },
+  ].sort((a, b) => a.t - b.t);
+}
+
+// ─── BUILD STEPS: ONE MEAT ───────────────────────────────────────
+function buildOneMeat(p) {
+  const r = DT.ribs, c = DT.chicken;
+  const a = [];
+  if (p === 'both' || p === 'ribs') a.push(
+    { id:'or0', t: r-5*60,       ti:'Set drum + rub ribs lato ossa', pr:'ribs', pe:['Simone','Marco'], temp:'300°F', det:'Drum a 300°F stabile.\nRub lato ossa: Kosmos GJ + BH Sweet&Savory senza binder.' },
+    { id:'or1', t: r-4*60+30,    ti:'Rub ribs lato carne', pr:'ribs', pe:['Marco'], det:'Kosmos GJ + BH Sweet&Savory sul lato carne.' },
+    { id:'or2', t: r-4*60,       ti:'Ribs → drum', pr:'ribs', pe:['Marco','Simone'], temp:'300°F', det:'Pecan + cipolle + water pan.\nRuota 180° ogni 15 min!' },
+    { id:'or3', t: r-3*60+30,    ti:'2° rub ribs + ruota 90°', pr:'ribs', pe:['Marco'], det:'Pulisci sangue. 2° giro rub. Ruota 90°.' },
+    { id:'or4', t: r-3*60+15,    ti:'Foil ribs', pr:'ribs', pe:['Marco'], det:'100g burro. MEAT SIDE UP.\nBH Tennessee + Raspberry + zucchero canna. Chiudi.' },
+    { id:'or5', t: r-2*60+45,    ti:'Check foil ribs 160-170°F', pr:'ribs', pe:['Marco'], temp:'160-170°F', det:'Apri, verifica temperatura.\nGira MEAT SIDE DOWN e richiudi.' },
+    { id:'or6', t: r-2*60+15,    ti:'Ribs → rest', pr:'ribs', pe:['Marco'], temp:'200-210°F + tenderness', det:'Sonda senza resistenza → cambro caldo.' },
+    { id:'or7', t: r-55,         ti:'Scalda glaze ribs', pr:'ribs', pe:['Matteo'], det:'2p BH Original + 1p BH Tennessee + ¼p Smokey Mtn. Al caldo.' },
+    { id:'or8', t: r-45,         ti:'Ribs foil boat + glaze', pr:'ribs', pe:['Marco'], det:'Foil boat. Maple syrup + glaze abbondante + final dust.' },
+    { id:'or9', t: r-30,         ti:'Ribs drum + chips JD', pr:'ribs', pe:['Marco'], det:'MEAT SIDE UP nel drum.\nChips Jack Daniel\'s. Ruota ogni 15 min.' },
+    { id:'or10',t: r-20,         ti:'Taglio e selezione ribs', pr:'ribs', pe:['Marco'], det:'Tagliere MEAT SIDE DOWN.\nMaple syrup + glaze + final dust.\nTaglia singole, gira UP, pennella.' },
+    { id:'or11',t: r-5,          ti:'Prep box RIBS → CONSEGNA ' + m2t(r), pr:'ribs', pe:['tutti'], det:'Consegna Ribs ' + m2t(r) }
+  );
+  if (p === 'both' || p === 'chicken') a.push(
+    { id:'oc0', t: c-5*60,       ti:'Brine chicken (Heat Riles)', pr:'chicken', pe:['Simone'], det:'Heat Riles Chicken Injection & Brine.\nCambro freddo almeno 2h.' },
+    { id:'oc1', t: c-4*60+30,    ti:'Injection chicken', pr:'chicken', pe:['Matteo'], det:'Togli da brine, asciuga, forma cuscino, impellicola.\nInietta da impellicolate. Cambro freddo.' },
+    { id:'oc2', t: c-3*60,       ti:'WSM 57" + rub chicken', pr:'chicken', pe:['Simone','Marco'], temp:'300-350°F', det:'Set WSM. Rub BH Sweet&Savory. Pizza pan spray duck fat.' },
+    { id:'oc3', t: c-2*60+30,    ti:'Chicken → WSM 57"', pr:'chicken', pe:['Matteo'], temp:'360-370°F', det:'Pecan + cipolle. Ruota ogni 15 min. Spray duck fat.' },
+    { id:'oc4', t: c-2*60,       ti:'Ruota + spray chicken', pr:'chicken', pe:['Simone'], det:'Ogni 15 min ruota.\nSpray duck fat ogni 30 min.' },
+    { id:'oc5', t: c-100,        ti:'Foil chicken 160-170°F', pr:'chicken', pe:['Marco'], temp:'160-170°F', det:'200g burro fuso nel vassoio.\nWSM a 300-330°F.' },
+    { id:'oc6', t: c-70,         ti:'Chicken → rest', pr:'chicken', pe:['Marco'], temp:'205-210°F', det:'Cambro caldo. Rest fino a 10 min prima della consegna.' },
+    { id:'oc7', t: c-50,         ti:'Prepara lattuga box', pr:'chicken', pe:['Matteo'], det:'Rondelle 2cm. Pellicola sulle singole. Frigo.' },
+    { id:'oc8', t: c-20,         ti:'Chicken glaze finale', pr:'chicken', pe:['Matteo'], det:'Re-injection succhi vassoio. Immersione totale glaze.\nFinal dust. 5 min WSM.' },
+    { id:'oc9', t: c-10,         ti:'Prep box CHICKEN → CONSEGNA ' + m2t(c), pr:'chicken', pe:['tutti'], det:'Consegna Chicken ' + m2t(c) }
+  );
+  return a.sort((a, b) => a.t - b.t);
+}
+
+// ─── CHECKLIST DATA ───────────────────────────────────────────────
+const CHECKLIST = [
+  { cat: 'Smoker site', items: ['WSM 57" (Brisket + Chicken)', 'WSM 18" (Pork)', 'Drum Smoker (Ribs + glaze)', 'Carbone — tutti gli smoker', 'Chunks pecan', 'Cipolle bionde — tutti gli smoker', 'Accendino / firelighter', 'Chips Jack Daniel\'s (ribs glaze)'] },
+  { cat: 'Attrezzatura cook', items: ['2-3 Taglieri grandi', 'Coltello disosso/flessibile', 'Coltello brisket lama dritta', 'Coltello elettrico', 'Forbici carne', 'Pinzette sottili', 'Spatola ribs', 'Pennello binder brisket', 'Pennelli salsa (min. 3)', 'Spray duck fat / butter', 'Siringa injection', 'Ago needle 14 (brisket flat)', 'Ago needle 16 (pork)', 'Pizza pan chicken', 'Separatore di grasso', 'Colino fine', 'Macina spezie (final dust)', 'Set misuratori Cup+tsp', 'Caddy flat brisket'] },
+  { cat: 'Monouso', items: ['Vassoi alluminio vari misure', 'Carta stagnola resistente', 'Pellicola trasparente', 'Zip bag grandi (brine chicken)', 'Cup plastica con tappo', 'Scottex abbondante', 'Guanti in nitrile', 'Sacchetti pattume'] },
+  { cat: 'Cambro & conservazione', items: ['Cambro caldo (rest carne)', 'Cambro freddo (chicken post-inj)', 'Yeti/thermos per salse', 'Frigo (carne + injection)', 'Fornello elettrico', 'Prezzemolo riccio / lattuga garnish'] },
+  { cat: 'Sonde & tech', items: ['Sonde wireless (min. 4)', 'Batterie sonde di riserva', 'Telefono/tablet per sonde', 'Termometro istantaneo', 'Orologio grande da tavolo', 'Questo telefono/tablet carico'] },
+  { cat: 'Ingredienti — rub & injection', items: ['Blues Hog Sweet & Savory', 'Kosmos Garlic Jalapeno', 'Meat Church Blanco', 'BH Beef Marinade Mix', 'Heat Riles Chicken Injection & Brine', 'Sale fino', 'Zucchero di canna', 'Maple syrup', 'Worcestershire sauce', 'Apple juice', 'Heat Riles Butter Bath'] },
+  { cat: 'Ingredienti — salse glaze', items: ['BH Original Sauce', 'BH Tennessee Red Sauce', 'BH Smokey Mountain Sauce', 'BH Raspberry Sauce'] },
+  { cat: 'Ingredienti — grassi & brodi', items: ['Burro non salato', 'Duck fat / butter ghee spray', 'Brodo pollo non salato', 'Brodo di manzo'] },
+  { cat: 'Carne', items: ['Ribs — 3 slab St. Louis (9-10 ossa)', 'Chicken — 12-16 cosce pelle bianca', 'Pork — 1 coppa intera (pulled)', 'Pork — 2/3 money muscle', 'Brisket intero (point + flat)'] },
+  { cat: 'Logistica & comfort', items: ['Gazebo', 'Tavoli grandi x2-3', 'Sedie pieghevoli', 'Carica batterie', 'Luci da lavoro + ciabatte', 'Prolunga principale', 'Estintore', 'Medication kit / cerotti', 'Acqua da bere + per injection'] }
+];
+
+// ─── RENDER HELPERS ───────────────────────────────────────────────
+function pillProt(pr) {
+  const m = { chicken: 'p-chicken Chicken', ribs: 'p-ribs Ribs', pork: 'p-pork Pork', brisket: 'p-brisket Brisket' };
+  const [c, l] = (m[pr] || 'p-person —').split(' ');
+  return `<span class="pill ${c}">${l}</span>`;
+}
+
+function stepCard(s, cls) {
+  const done = DONE[s.id];
+  const al = ACFG[s.id] || 5;
+  return `<div class="card ${done ? 'done-card' : cls}" id="card-${s.id}">
+    <div class="card-row">
+      <span class="card-time">${m2t(s.t)}</span>
+      <span class="card-title">${s.ti}</span>
+      <i class="ti ${done ? 'ti-circle-check' : 'ti-circle'} done-icon ${done ? 'checked' : ''}" onclick="toggleDone('${s.id}')" aria-label="segna completato"></i>
+    </div>
+    ${s.temp ? `<div><span class="temp"><i class="ti ti-thermometer"></i>${s.temp}</span></div>` : ''}
+    <div class="pills">
+      ${pillProt(s.pr)}
+      ${s.pe.map(p => `<span class="pill p-person">${p}</span>`).join('')}
+      <span class="pill p-alert" onclick="cycleAlert('${s.id}',this)"><i class="ti ti-bell" style="font-size:10px"></i> ${al}m</span>
+    </div>
+    <span class="expand-btn" onclick="xp('${s.id}')"><i class="ti ti-chevron-down"></i> Dettagli</span>
+    <div class="detail" id="det-${s.id}">${(s.det || '').replace(/\n/g, '<br>')}</div>
+  </div>`;
+}
+
+function xp(id) {
+  const d = document.getElementById('det-' + id);
+  d.classList.toggle('open');
+  const b = d.previousElementSibling;
+  b.innerHTML = d.classList.contains('open')
+    ? '<i class="ti ti-chevron-up"></i> Chiudi'
+    : '<i class="ti ti-chevron-down"></i> Dettagli';
+}
+
+function toggleDone(id) { DONE[id] = !DONE[id]; renderAll(); }
+
+function cycleAlert(id, btn) {
+  const o = [5, 10, 15, 20];
+  const i = o.indexOf(ACFG[id] || 5);
+  ACFG[id] = o[(i + 1) % o.length];
+  btn.innerHTML = `<i class="ti ti-bell" style="font-size:10px"></i> ${ACFG[id]}m`;
+}
+
+// ─── RENDER FUNCTIONS ─────────────────────────────────────────────
+function renderAll() { renderNow(); renderTimeline(); renderProteine(); renderChecklist(); }
+
+function renderNow() {
+  const now = nowM();
+  const urg = STEPS.filter(s => !DONE[s.id] && s.t > now && s.t <= now + 15).sort((a, b) => a.t - b.t);
+  const nxt = STEPS.filter(s => !DONE[s.id] && s.t > now && s.t <= now + 90).sort((a, b) => a.t - b.t);
+  const act = STEPS.filter(s => !DONE[s.id] && s.t <= now && s.t > now - 60).sort((a, b) => b.t - a.t);
+
+  let uHtml = '';
+  if (urg.length) {
+    uHtml = `<div class="sec" style="color:var(--red)"><i class="ti ti-alert-triangle"></i>Urgente — entro 15 min</div>`;
+    urg.forEach(s => { uHtml += stepCard(s, 'urgent'); });
+  }
+  document.getElementById('urgent-section').innerHTML = uHtml;
+
+  let nHtml = '';
+  nxt.slice(0, 3).forEach(s => { nHtml += stepCard(s, 'upcoming'); });
+  if (!nHtml) nHtml = `<div class="card"><span style="color:var(--smoke);font-size:13px">Nessuna attività nei prossimi 90 min.</span></div>`;
+  document.getElementById('next-section').innerHTML = nHtml;
+
+  let dHtml = '';
+  Object.keys(DT).forEach(pr => {
+    const dt = DT[pr]; const diff = dt - now;
+    const hh = Math.floor(Math.abs(diff) / 60), mm = Math.abs(diff) % 60;
+    const lbl = diff < 0 ? 'consegnato' : `${String(hh).padStart(2,'0')}h ${String(mm).padStart(2,'0')}m`;
+    const cls = diff < 0 ? 'done2' : diff < 30 ? 'hot' : '';
+    dHtml += `<div class="del-row"><span class="del-name">${NM[pr]}</span><span class="del-clock">${m2t(dt)}</span><span class="del-countdown ${cls}">${lbl}</span></div>`;
+  });
+  document.getElementById('delivery-card').innerHTML = dHtml;
+
+  let aHtml = '';
+  act.slice(0, 3).forEach(s => { aHtml += stepCard(s, 'active-step'); });
+  if (!aHtml) aHtml = `<div class="card"><span style="color:var(--smoke);font-size:13px">Nessuno step in corso rilevato.</span></div>`;
+  document.getElementById('active-section').innerHTML = aHtml;
+}
+
+function renderTimeline() {
+  const filtered = STEPS.filter(s => {
+    return (fprot === 'all' || s.pr === fprot) && (fpers === 'all' || s.pe.includes(fpers));
+  }).sort((a, b) => a.t - b.t);
+  const now = nowM();
+  let html = '';
+  filtered.forEach(s => { html += stepCard(s, s.t < now ? 'done-card' : 'upcoming'); });
+  document.getElementById('timeline-list').innerHTML = html || `<div style="color:var(--smoke);font-size:13px;padding:10px 0">Nessuno step con i filtri attuali.</div>`;
+}
+
+function setFilter(type, val, btn) {
+  if (type === 'p') fprot = val; else fpers = val;
+  btn.closest('.filters').querySelectorAll('.fb').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderTimeline();
+}
+
+function renderProteine() {
+  const prots = Object.keys(DT); const now = nowM();
+  let sHtml = '';
+  prots.forEach(pr => {
+    const dt = DT[pr]; const diff = dt - now;
+    const hh = Math.floor(Math.abs(diff) / 60), mm = Math.abs(diff) % 60;
+    const lbl = diff < 0 ? 'DONE' : `${String(hh).padStart(2,'0')}h${String(mm).padStart(2,'0')}`;
+    const ps = STEPS.filter(s => s.pr === pr);
+    const cur = ps.filter(s => !DONE[s.id] && s.t <= now && s.t > now - 60);
+    const fase = cur.length ? cur[cur.length-1].ti.substring(0, 20) + '…' : '—';
+    sHtml += `<div class="stat"><div class="stat-val">${lbl}</div><div class="stat-lbl">${NM[pr]} — ${m2t(dt)}</div><div class="stat-fase">${fase}</div></div>`;
+  });
+  document.getElementById('proteina-stats').innerHTML = sHtml;
+
+  let pHtml = '';
+  prots.forEach(pr => {
+    const ps = STEPS.filter(s => s.pr === pr);
+    const done = ps.filter(s => DONE[s.id]).length;
+    const pct = ps.length ? Math.round(done / ps.length * 100) : 0;
+    pHtml += `<div class="sec">${NM[pr]}</div>
+      <div class="card">
+        <div class="prog-wrap"><span>${done}/${ps.length} step completati</span><span>${pct}%</span></div>
+        <div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div>
+      </div>`;
+  });
+  document.getElementById('proteina-prog').innerHTML = pHtml;
+}
+
+function renderChecklist() {
+  let tot = 0, done = 0; let html = '';
+  CHECKLIST.forEach((cat, ci) => {
+    html += `<div class="ck-cat">${cat.cat}</div><div class="card">`;
+    cat.items.forEach((item, ii) => {
+      const k = `${ci}-${ii}`; const ch = CHKSTATE[k] || false;
+      tot++; if (ch) done++;
+      html += `<div class="ck-item"><input type="checkbox" id="ck-${k}" ${ch ? 'checked' : ''} onchange="toggleCk('${k}')"><label for="ck-${k}" class="${ch ? 'done' : ''}">${item}</label></div>`;
+    });
+    html += '</div>';
+  });
+  const pct = tot ? Math.round(done / tot * 100) : 0;
+  const head = `<div class="sec">Equipaggiamento <span style="color:var(--ember2);font-family:'DM Mono',monospace">${done}/${tot} — ${pct}%</span></div>
+    <div class="card" style="margin-bottom:12px"><div class="prog-bar" style="height:5px"><div class="prog-fill" style="width:${pct}%"></div></div></div>`;
+  document.getElementById('checklist-wrap').innerHTML = head + html;
+}
+
+function toggleCk(k) { CHKSTATE[k] = !CHKSTATE[k]; renderChecklist(); }
+
+// ─── CLOCK & ALERTS ───────────────────────────────────────────────
+function tick() {
+  const n = new Date();
+  document.getElementById('live-clock').textContent =
+    String(n.getHours()).padStart(2,'0') + ':' + String(n.getMinutes()).padStart(2,'0');
+  if (STEPS.length) {
+    checkAlerts();
+    if (document.getElementById('pane-now').style.display !== 'none') renderNow();
+  }
+}
+
+function checkAlerts() {
+  const now = nowM();
+  STEPS.forEach(s => {
+    if (DONE[s.id]) return;
+    const al = ACFG[s.id] || 5;
+    if (s.t - now === al) {
+      triggerAlert(
+        `${m2t(s.t)} — ${s.ti}`,
+        `Tra ${al} min\n${NM[s.pr]} — ${s.pe.join(', ')}`
+      );
+    }
+  });
+}
+
+function triggerAlert(title, body) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-body').textContent = body;
+  document.getElementById('modal').style.display = 'flex';
+  if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+}
+
+function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+function demoAlert() {
+  if (!STEPS.length) {
+    triggerAlert('Demo notifica', 'Configura prima la gara per vedere alert reali.\n\nAvvia Master Series o One Meat dalla schermata principale.');
+    return;
+  }
+  const s = STEPS[Math.floor(Math.random() * Math.min(6, STEPS.length))];
+  triggerAlert(s.ti, `Demo alert\n${NM[s.pr]} — ${s.pe.join(', ')}\nOrario: ${m2t(s.t)}`);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────
+tick();
+</script>
+</body>
+</html>
