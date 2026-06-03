@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-title" content="I Cobra BBQ">
 <meta name="theme-color" content="#0f0d0b">
 <title>I Cobra BBQ — Competition Manager</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght=300;400;500&family=DM+Mono:wght=400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
 <style>
 :root {
@@ -202,12 +202,19 @@ html, body {
 
 /* VERSION BADGE */
 .version { text-align: center; font-size: 10px; color: var(--smoke); padding: 10px 0 6px; letter-spacing: 1px; }
+
+/* ════════════════ RESPONSIVE TABLET OPTIMIZATION ════════════════ */
+@media (min-width: 500px) {
+  :root { font-size: 15px; }
+  .app, .nav { max-width: 768px; }
+  .stat-grid { grid-template-columns: repeat(4, 1fr); }
+  .card-time { min-width: 50px; font-size: 14px; }
+}
 </style>
 </head>
 <body>
 <div class="app" id="app">
 
-<!-- ═══════════════════════════ WELCOME ═══════════════════════════ -->
 <div class="screen active" id="screen-welcome">
   <div class="welcome-hero">
     <div class="hero-logo">I COBRA</div>
@@ -237,7 +244,6 @@ html, body {
   </div>
 </div>
 
-<!-- ═══════════════════════════ SETUP ═══════════════════════════ -->
 <div class="screen" id="screen-setup">
   <div class="topbar">
     <button class="back-btn" onclick="showScreen('screen-welcome')" aria-label="indietro"><i class="ti ti-arrow-left"></i></button>
@@ -246,7 +252,6 @@ html, body {
     </div>
   </div>
   <div class="content">
-    <!-- MASTER FIELDS -->
     <div id="master-fields">
       <div class="sec">Orari consegna ufficiali</div>
       <div class="setup-field"><label>Consegna Chicken</label><input type="time" id="t-chicken" value="12:00"></div>
@@ -260,7 +265,6 @@ html, body {
         <div class="setup-note">Default 9h — WSM 57" a 300°F stabili</div>
       </div>
     </div>
-    <!-- ONE MEAT FIELDS -->
     <div id="onemeat-fields" style="display:none">
       <div class="sec">Configurazione</div>
       <div class="setup-field">
@@ -279,7 +283,6 @@ html, body {
   </div>
 </div>
 
-<!-- ═══════════════════════════ MAIN ═══════════════════════════ -->
 <div class="screen" id="screen-main">
   <div class="topbar">
     <div style="flex:1">
@@ -296,7 +299,6 @@ html, body {
     <div class="tab" id="tab-check" onclick="switchTab('check')">Check</div>
   </div>
 
-  <!-- PANE: ADESSO -->
   <div class="content" id="pane-now">
     <div id="urgent-section"></div>
     <div class="sec">Prossima attività</div>
@@ -307,7 +309,6 @@ html, body {
     <div id="active-section"></div>
   </div>
 
-  <!-- PANE: TIMELINE -->
   <div class="content" id="pane-timeline" style="display:none">
     <div class="filters" id="f-proteina">
       <button class="fb on" onclick="setFilter('p','all',this)">Tutti</button>
@@ -325,18 +326,15 @@ html, body {
     <div id="timeline-list"></div>
   </div>
 
-  <!-- PANE: PROTEINE -->
   <div class="content" id="pane-proteine" style="display:none">
     <div class="stat-grid" id="proteina-stats"></div>
     <div id="proteina-prog"></div>
   </div>
 
-  <!-- PANE: CHECKLIST -->
   <div class="content" id="pane-check" style="display:none">
     <div id="checklist-wrap"></div>
   </div>
 
-  <!-- BOTTOM NAV -->
   <div class="nav">
     <button class="nb active" id="nav-now" onclick="switchTab('now')"><i class="ti ti-clock"></i>Adesso</button>
     <button class="nb" id="nav-timeline" onclick="switchTab('timeline')"><i class="ti ti-list"></i>Timeline</button>
@@ -345,7 +343,6 @@ html, body {
   </div>
 </div>
 
-<!-- ═══════════════════════════ MODAL ═══════════════════════════ -->
 <div class="modal-bg" id="modal">
   <div class="modal-box">
     <div class="modal-icon"><i class="ti ti-bell-ringing"></i></div>
@@ -355,9 +352,7 @@ html, body {
   </div>
 </div>
 
-</div><!-- /app -->
-
-<script>
+</div><script>
 // ─── STATE ───────────────────────────────────────────────────────
 let MODE = 'master';
 let DT = {};          // delivery times in minutes
@@ -386,7 +381,7 @@ function selectMode(m) {
   document.getElementById('master-fields').style.display = m === 'master' ? 'block' : 'none';
   document.getElementById('onemeat-fields').style.display = m === 'onemeat' ? 'block' : 'none';
   document.getElementById('setup-title').textContent = m === 'master' ? 'Setup Consegne' : 'One Meat — Setup';
-  showScreen('screen-setup');
+  showScreen('screen-welcome');
 }
 
 function startComp() {
@@ -597,7 +592,7 @@ function renderNow() {
 
   let nHtml = '';
   nxt.slice(0, 3).forEach(s => { nHtml += stepCard(s, 'upcoming'); });
-  if (!nHtml) nHtml = `<div class="card"><span style="color:var(--smoke);font-size:13px">Nessuna attività nei prossimi 90 min.</span></div>`;
+  if (!nHtml) nHtml = `<div class="card"><span style="color:var(--smoke);font-size:13px">Nessuna attività nei primi 90 min.</span></div>`;
   document.getElementById('next-section').innerHTML = nHtml;
 
   let dHtml = '';
@@ -620,9 +615,8 @@ function renderTimeline() {
   const filtered = STEPS.filter(s => {
     return (fprot === 'all' || s.pr === fprot) && (fpers === 'all' || s.pe.includes(fpers));
   }).sort((a, b) => a.t - b.t);
-  const now = nowM();
   let html = '';
-  filtered.forEach(s => { html += stepCard(s, s.t < now ? 'done-card' : 'upcoming'); });
+  filtered.forEach(s => { html += stepCard(s, 'upcoming'); });
   document.getElementById('timeline-list').innerHTML = html || `<div style="color:var(--smoke);font-size:13px;padding:10px 0">Nessuno step con i filtri attuali.</div>`;
 }
 
@@ -710,17 +704,6 @@ function triggerAlert(title, body) {
   document.getElementById('modal-body').textContent = body;
   document.getElementById('modal').style.display = 'flex';
   if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
-}
-
-function closeModal() { document.getElementById('modal').style.display = 'none'; }
-
-function demoAlert() {
-  if (!STEPS.length) {
-    triggerAlert('Demo notifica', 'Configura prima la gara per vedere alert reali.\n\nAvvia Master Series o One Meat dalla schermata principale.');
-    return;
-  }
-  const s = STEPS[Math.floor(Math.random() * Math.min(6, STEPS.length))];
-  triggerAlert(s.ti, `Demo alert\n${NM[s.pr]} — ${s.pe.join(', ')}\nOrario: ${m2t(s.t)}`);
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────
