@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="I Cobra BBQ">
+<meta name="theme-color" content="#0f0d0b">
+<title>I Cobra BBQ — Competition Manager v5</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+/* ─── VARS ─────────────────────────────────────── */
+:root{
+  --pit:#0f0d0b;--pit2:#1a1612;--pit3:#252018;--pit4:#2e2820;
+  --ember:#e8460a;--ember2:#f97316;--ember3:#fbbf24;
+  --smoke:#6b6560;--smoke2:#9b948d;--smoke3:#ccc5bc;
+  --bone:#f5f0e8;--bone2:#e8e0d0;
+  --green:#22c55e;--red:#ef4444;--blue:#3b82f6;
+  --r:8px;
+  /* Heights used for offset calculations */
+  --topbar-h:53px;
+  --timerbar-h:80px;
+  --tabs-h:38px;
+  --nav-h:56px;
+  --safe-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{background:var(--pit);color:var(--bone);font-size:14px;min-height:100dvh;-webkit-font-smoothing:antialiased;overscroll-behavior:none;}
+.app{max-width:600px;margin:0 auto;position:relative;min-height:100dvh;display:flex;flex-direction:column;}
+.app::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.05)2px,rgba(0,0,0,.05)4px);pointer-events:none;z-index:0;}
+
+/* ─── SCREENS ──────────────────────────────────── */
+.screen{display:none;flex-direction:column;flex:1;position:relative;z-index:1;}
+.screen.active{display:flex;}
+
+/* ─── TOPBAR (fixed, z:60) ─────────────────────── */
+.topbar{
+  padding:10px 14px 8px;
+  padding-top:max(10px,env(safe-area-inset-top));
+  display:flex;align-items:center;gap:8px;
+  border-bottom:1px solid rgba(255,255,255,.06);
+  background:var(--pit2);
+  position:fixed;top:0;left:0;right:0;
+  max-width:600px;margin:0 auto;
+  z-index:60;
+  height:var(--topbar-h);
+}
+.topbar-logo{font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:2px;color:var(--bone);flex:1;line-height:1;}
+.topbar-sub{font-size:9px;color:var(--smoke2);letter-spacing:1px;text-transform:uppercase;display:block;font-weight:300;}
+.live-badge{background:var(--ember);color:#fff;font-size:12px;font-family:'DM Mono',monospace;padding:4px 10px;border-radius:5px;letter-spacing:.5px;font-weight:500;flex-shrink:0;}
+.home-btn{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:var(--smoke3);cursor:pointer;font-size:11px;padding:5px 8px;border-radius:5px;line-height:1;display:flex;align-items:center;gap:4px;font-family:'DM Sans',sans-serif;letter-spacing:.5px;text-transform:uppercase;flex-shrink:0;}
+.home-btn i{font-size:15px;}
+.icon-btn{background:none;border:none;color:var(--smoke2);cursor:pointer;font-size:20px;padding:4px;line-height:1;flex-shrink:0;}
+.back-btn{background:none;border:none;color:var(--smoke2);cursor:pointer;font-size:20px;padding:2px;line-height:1;}
+
+/* ─── TIMER BAR (fixed, z:58) ──────────────────── */
+.timer-bar{
+  position:fixed;
+  top:var(--topbar-h);
+  left:0;right:0;
+  max-width:600px;margin:0 auto;
+  z-index:58;
+  height:var(--timerbar-h);
+  background:var(--pit2);
+  border-bottom:2px solid rgba(232,70,10,.25);
+  padding:8px 14px;
+  display:none; /* shown only in screen-main */
+  align-items:center;
+  gap:12px;
+}
+.timer-bar.visible{display:flex;}
+.tbr-ring{flex-shrink:0;transform:rotate(-90deg);display:block;}
+.tbr-ring-bg{fill:none;stroke:rgba(255,255,255,.08);stroke-width:5;}
+.tbr-ring-fill{fill:none;stroke-width:5;stroke-linecap:round;transition:stroke-dashoffset .8s ease;}
+.tbr-info{flex:1;min-width:0;}
+.tbr-countdown{font-family:'Bebas Neue',sans-serif;font-size:42px;letter-spacing:2px;line-height:1;color:var(--bone);transition:color .4s;}
+.tbr-countdown.hot{color:var(--ember2);}
+.tbr-countdown.urg{color:var(--red);}
+.tbr-sub{font-size:10px;color:var(--smoke2);font-family:'DM Mono',monospace;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tbr-dots{display:flex;gap:5px;margin-top:4px;}
+.dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.14);cursor:pointer;transition:background .2s;flex-shrink:0;}
+.dot.active{background:var(--ember2);}
+.dot.dot-done{background:var(--green);}
+.tbr-right{flex-shrink:0;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:4px;}
+.tbr-badge{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;padding:3px 10px;border-radius:20px;}
+.tbr-nextstep{font-size:9px;color:var(--smoke2);max-width:110px;text-align:right;line-height:1.35;}
+
+/* ─── TABS (fixed, z:57) ───────────────────────── */
+.tabs{
+  position:fixed;
+  left:0;right:0;
+  max-width:600px;margin:0 auto;
+  z-index:57;
+  background:var(--pit2);
+  border-bottom:1px solid rgba(255,255,255,.06);
+  display:flex;
+  height:var(--tabs-h);
+  /* top set dynamically by JS */
+}
+.tab{flex:1;padding:8px 2px;text-align:center;font-size:9px;letter-spacing:.4px;text-transform:uppercase;cursor:pointer;color:var(--smoke);border-bottom:2px solid transparent;transition:all .2s;font-weight:500;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.tab i{font-size:13px;}
+.tab.active{color:var(--ember2);border-bottom-color:var(--ember2);}
+
+/* ─── CONTENT ──────────────────────────────────── */
+/* top-offset = topbar + timerbar + tabs, bottom-offset = nav + safe-area */
+.content{
+  flex:1;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  /* defaults overridden inline by JS after start */
+  padding-top:12px;
+  padding-left:12px;
+  padding-right:12px;
+  padding-bottom:calc(var(--nav-h) + var(--safe-bottom) + 12px);
+}
+/* Welcome/Setup screens don't have timer bar */
+#screen-welcome .content,
+#screen-setup .content{
+  padding-top:calc(var(--topbar-h) + 12px);
+  padding-bottom:20px;
+}
+
+/* ─── NAV (fixed, z:60) ────────────────────────── */
+.nav{
+  display:flex;
+  border-top:1px solid rgba(255,255,255,.07);
+  background:var(--pit2);
+  position:fixed;
+  bottom:0;left:0;right:0;
+  max-width:600px;margin:0 auto;
+  z-index:60;
+  padding-bottom:var(--safe-bottom);
+  height:calc(var(--nav-h) + var(--safe-bottom));
+}
+.nb{flex:1;padding:9px 2px 7px;text-align:center;cursor:pointer;font-size:8px;color:var(--smoke);border:none;background:transparent;display:flex;flex-direction:column;align-items:center;gap:3px;letter-spacing:.4px;text-transform:uppercase;transition:color .15s;}
+.nb i{font-size:21px;}
+.nb.active{color:var(--ember2);}
+
+/* ─── SECTION ──────────────────────────────────── */
+.sec{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--smoke);margin:14px 0 7px;font-weight:500;display:flex;align-items:center;gap:6px;}
+.sec::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.06);}
+.sec:first-child{margin-top:2px;}
+
+/* ─── DASHBOARD ─────────────────────────────────── */
+.smoker-row{display:flex;gap:7px;margin-bottom:10px;}
+.smoker-chip{flex:1;background:var(--pit2);border:1px solid rgba(255,255,255,.08);border-radius:6px;padding:8px 10px;text-align:center;}
+.smoker-chip.sm-drum{border-top:2px solid #ef4444;}
+.smoker-chip.sm-wsm57{border-top:2px solid #3b82f6;}
+.smoker-chip.sm-wsm18{border-top:2px solid #22c55e;}
+.smoker-icon{font-size:16px;margin-bottom:2px;}
+.smoker-name{font-size:9px;letter-spacing:.8px;text-transform:uppercase;color:var(--smoke2);font-weight:500;}
+.smoker-prots{font-size:9px;color:var(--smoke3);margin-top:2px;line-height:1.3;}
+
+.urg-banner{background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.35);border-radius:var(--r);padding:10px 12px;margin-bottom:8px;animation:urgBlink 1.8s ease-in-out infinite;}
+@keyframes urgBlink{0%,100%{border-color:rgba(239,68,68,.35);}50%{border-color:rgba(239,68,68,.8);}}
+.urg-row{display:flex;align-items:flex-start;gap:10px;}
+.urg-time{font-family:'DM Mono',monospace;font-size:14px;color:var(--red);font-weight:500;min-width:44px;padding-top:1px;}
+.urg-title{font-size:15px;font-weight:600;color:var(--bone);flex:1;line-height:1.3;}
+.urg-ref{font-size:10px;font-family:'DM Mono',monospace;background:rgba(239,68,68,.2);color:#fca5a5;padding:1px 5px;border-radius:3px;margin-left:5px;white-space:nowrap;}
+.urg-done{font-size:22px;cursor:pointer;color:var(--smoke);transition:color .15s;flex-shrink:0;}
+.urg-done.chk{color:var(--green);}
+.urg-pills{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;}
+
+.next-big{background:var(--pit2);border:1px solid rgba(255,255,255,.1);border-left:3px solid var(--ember2);border-radius:0 var(--r) var(--r) 0;padding:14px;margin-bottom:8px;}
+.next-big-hdr{display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;}
+.next-big-time{font-family:'DM Mono',monospace;font-size:15px;color:var(--ember2);min-width:44px;font-weight:500;padding-top:2px;}
+.next-big-title{font-size:17px;font-weight:600;color:var(--bone);flex:1;line-height:1.3;}
+.next-big-ref{font-size:11px;font-family:'DM Mono',monospace;background:rgba(249,115,22,.18);color:var(--ember2);padding:2px 6px;border-radius:3px;white-space:nowrap;margin-left:4px;}
+.next-big-done{font-size:24px;cursor:pointer;color:var(--smoke);flex-shrink:0;transition:color .15s;}
+.next-big-done.chk{color:var(--green);}
+.next-big-det{font-size:13px;color:var(--smoke2);line-height:1.65;background:var(--pit3);border-radius:4px;padding:10px 12px;display:none;margin-top:8px;}
+.next-big-det.open{display:block;}
+.expand-btn{font-size:11px;color:var(--smoke);cursor:pointer;display:inline-flex;align-items:center;gap:4px;letter-spacing:.4px;text-transform:uppercase;margin-top:6px;user-select:none;}
+
+.mini-card{background:var(--pit2);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;}
+.mini-time{font-family:'DM Mono',monospace;font-size:12px;color:var(--smoke2);min-width:40px;flex-shrink:0;}
+.mini-title{font-size:13px;font-weight:500;color:var(--bone2);flex:1;line-height:1.3;}
+.mini-ref{font-size:10px;font-family:'DM Mono',monospace;background:rgba(255,255,255,.07);color:var(--smoke);padding:1px 4px;border-radius:3px;margin-left:4px;white-space:nowrap;}
+.mini-done{font-size:19px;cursor:pointer;color:var(--smoke);flex-shrink:0;}
+.mini-done.chk{color:var(--green);}
+
+.del-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.del-cell{background:var(--pit2);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:10px 12px;}
+.del-cell.del-next{border-color:rgba(249,115,22,.45);background:rgba(249,115,22,.07);}
+.del-cell.del-done{opacity:.45;}
+.del-prot{font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:3px;}
+.del-clock{font-family:'DM Mono',monospace;font-size:17px;color:var(--bone);font-weight:500;}
+.del-cd{font-family:'DM Mono',monospace;font-size:12px;margin-top:3px;}
+
+.active-card{background:var(--pit2);border:1px solid rgba(255,255,255,.07);border-left:3px solid rgba(249,115,22,.5);border-radius:0 var(--r) var(--r) 0;padding:9px 12px;margin-bottom:6px;display:flex;align-items:flex-start;gap:10px;}
+.pulse-dot{width:8px;height:8px;border-radius:50%;background:var(--ember2);margin-top:4px;flex-shrink:0;animation:pulse 2s ease-in-out infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.25;}}
+.act-text{flex:1;}
+.act-title{font-size:13px;font-weight:500;color:var(--bone2);}
+.act-who{font-size:11px;color:var(--smoke);margin-top:2px;}
+.act-ref{font-size:10px;font-family:'DM Mono',monospace;background:rgba(255,255,255,.07);color:var(--smoke);padding:1px 4px;border-radius:3px;margin-left:5px;}
+.act-done{font-size:19px;cursor:pointer;color:var(--smoke);flex-shrink:0;}
+.act-done.chk{color:var(--green);}
+
+/* ─── TIMELINE CARDS ────────────────────────────── */
+.card{background:var(--pit2);border:1px solid rgba(255,255,255,.08);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;}
+.card.done-card{opacity:.35;}
+.card-hdr{display:flex;align-items:flex-start;gap:8px;}
+.card-time{font-family:'DM Mono',monospace;font-size:13px;color:var(--ember2);min-width:42px;font-weight:500;padding-top:2px;flex-shrink:0;}
+.card-title{font-size:14px;font-weight:500;flex:1;line-height:1.35;color:var(--bone);}
+.card-ref{font-size:10px;font-family:'DM Mono',monospace;background:rgba(255,255,255,.09);color:var(--smoke3);padding:1px 5px;border-radius:3px;margin-left:4px;white-space:nowrap;display:inline-block;vertical-align:middle;}
+/* Bell button — top-right of card */
+.bell-btn{
+  flex-shrink:0;
+  width:34px;height:34px;
+  border-radius:6px;
+  border:1px solid rgba(255,255,255,.1);
+  background:rgba(255,255,255,.04);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;
+  transition:all .15s;
+  position:relative;
+}
+.bell-btn i{font-size:18px;color:var(--smoke2);transition:color .15s;}
+.bell-btn.bell-on{background:rgba(232,70,10,.18);border-color:rgba(232,70,10,.45);}
+.bell-btn.bell-on i{color:var(--ember2);}
+/* minute selector — appears below bell when ON */
+.bell-mins{
+  display:none;
+  gap:4px;
+  margin-top:6px;
+  justify-content:flex-end;
+}
+.bell-mins.open{display:flex;}
+.bm{font-size:10px;padding:3px 7px;border-radius:4px;border:0.5px solid rgba(255,255,255,.12);background:transparent;color:var(--smoke2);cursor:pointer;font-family:'DM Mono',monospace;transition:all .15s;}
+.bm.sel{background:var(--ember);color:#fff;border-color:var(--ember);}
+/* done icon */
+.done-icon{font-size:20px;cursor:pointer;color:var(--smoke);flex-shrink:0;transition:color .15s;margin-left:2px;}
+.done-icon.chk{color:var(--green);}
+
+.pills{display:flex;gap:5px;flex-wrap:wrap;margin-top:7px;}
+.pill{font-size:10px;font-weight:500;padding:2px 7px;border-radius:20px;letter-spacing:.4px;text-transform:uppercase;}
+.p-chicken{background:rgba(59,130,246,.2);color:#93c5fd;}
+.p-ribs{background:rgba(239,68,68,.2);color:#fca5a5;}
+.p-pork{background:rgba(34,197,94,.2);color:#86efac;}
+.p-brisket{background:rgba(251,191,36,.2);color:#fde68a;}
+.p-person{background:rgba(255,255,255,.07);color:var(--smoke2);border:0.5px solid rgba(255,255,255,.1);}
+.temp{display:inline-flex;align-items:center;gap:4px;background:rgba(232,70,10,.15);border:0.5px solid rgba(232,70,10,.3);color:var(--ember2);font-size:11px;font-family:'DM Mono',monospace;padding:2px 8px;border-radius:4px;margin-top:6px;}
+.detail{background:var(--pit3);border-radius:4px;padding:10px 12px;margin-top:8px;font-size:13px;color:var(--smoke2);line-height:1.65;display:none;}
+.detail.open{display:block;}
+
+/* ─── PROTEINE ──────────────────────────────────── */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+.stat{background:var(--pit2);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:12px;}
+.stat-val{font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--ember2);letter-spacing:1px;line-height:1;}
+.stat-lbl{font-size:11px;color:var(--smoke);margin-top:3px;letter-spacing:.4px;text-transform:uppercase;}
+.stat-fase{font-size:10px;color:var(--smoke2);margin-top:2px;}
+.prog-wrap{display:flex;justify-content:space-between;margin-bottom:5px;font-size:12px;color:var(--smoke);}
+.prog-bar{height:3px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--ember),var(--ember2));border-radius:2px;transition:width .4s;}
+
+/* ─── CHECKLIST ─────────────────────────────────── */
+.ck-cat{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--smoke);margin:14px 0 6px;font-weight:500;}
+.ck-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.ck-item:last-child{border-bottom:none;}
+.ck-item input[type=checkbox]{width:16px;height:16px;margin-top:2px;accent-color:var(--ember);cursor:pointer;flex-shrink:0;}
+.ck-item label{font-size:13px;color:var(--bone2);cursor:pointer;flex:1;line-height:1.4;}
+.ck-item label.done{text-decoration:line-through;color:var(--smoke);}
+.ck-ref{font-size:10px;font-family:'DM Mono',monospace;color:var(--smoke);background:rgba(255,255,255,.05);padding:1px 4px;border-radius:2px;margin-left:4px;}
+
+/* ─── STATS ──────────────────────────────────────── */
+.stats-kpi-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px;}
+.kpi{background:var(--pit2);border:1px solid rgba(255,255,255,.07);border-radius:var(--r);padding:12px 10px;text-align:center;}
+.kpi-val{font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:1px;line-height:1;}
+.kpi-lbl{font-size:9px;color:var(--smoke);margin-top:3px;letter-spacing:.5px;text-transform:uppercase;}
+.perf-row{display:flex;align-items:center;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.04);gap:8px;}
+.perf-row:last-child{border-bottom:none;}
+.perf-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--smoke2);min-width:36px;flex-shrink:0;}
+.perf-name{font-size:11px;color:var(--bone2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.perf-bar-wrap{width:48px;height:4px;background:rgba(255,255,255,.07);border-radius:2px;overflow:hidden;flex-shrink:0;}
+.perf-bar-fill{height:100%;border-radius:2px;}
+.perf-diff{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;min-width:44px;text-align:right;flex-shrink:0;}
+.pace-chart{display:flex;align-items:flex-end;gap:3px;height:56px;padding:0 2px;}
+.pace-bar{flex:1;min-width:5px;border-radius:2px 2px 0 0;}
+
+/* ─── KCBS ───────────────────────────────────────── */
+.kcbs-prot-title{font-size:11px;font-weight:600;text-transform:uppercase;margin-bottom:6px;}
+.kcbs-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:4px;}
+.kcbs-field label{font-size:10px;color:var(--smoke3);display:block;margin-bottom:3px;}
+.kcbs-field input{width:100%;padding:7px 8px;background:var(--pit3);border:1px solid rgba(255,255,255,.1);color:var(--bone);font-family:monospace;border-radius:4px;font-size:14px;}
+.kcbs-sub{font-size:12px;text-align:right;margin-bottom:10px;color:var(--smoke2);}
+.kcbs-total-box{margin-top:14px;padding:14px;background:var(--pit3);border-radius:6px;text-align:center;border:1px dashed var(--ember);}
+.kcbs-total-val{font-family:'Bebas Neue',sans-serif;font-size:44px;color:var(--ember2);letter-spacing:1px;line-height:1;margin-top:2px;}
+
+/* ─── FILTERS ────────────────────────────────────── */
+.filters{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;}
+.fb{font-size:11px;padding:4px 9px;border-radius:20px;border:1px solid rgba(255,255,255,.12);background:transparent;cursor:pointer;color:var(--smoke2);text-transform:uppercase;letter-spacing:.5px;transition:all .15s;}
+.fb.on{background:var(--ember);color:#fff;border-color:var(--ember);}
+
+/* ─── WELCOME ─────────────────────────────────────── */
+.welcome-hero{padding:calc(var(--topbar-h) + 24px) 16px 16px;background:linear-gradient(180deg,rgba(232,70,10,.13)0%,transparent 100%);}
+.hero-logo{font-family:'Bebas Neue',sans-serif;font-size:48px;letter-spacing:5px;color:var(--bone);line-height:1;}
+.hero-sub2{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:4px;color:var(--ember);line-height:1;}
+.hero-line{width:48px;height:2px;background:var(--ember);margin:14px 0;}
+.hero-desc{font-size:12px;color:var(--smoke2);letter-spacing:1.5px;text-transform:uppercase;font-weight:300;}
+.mode-card{background:var(--pit2);border:1px solid rgba(255,255,255,.09);border-radius:10px;padding:16px;margin:0 0 10px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:all .2s;}
+.mode-card:hover,.mode-card:active{border-color:var(--ember);background:rgba(232,70,10,.08);}
+.mode-icon{width:48px;height:48px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;background:rgba(232,70,10,.15);color:var(--ember2);flex-shrink:0;}
+.mode-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:1.5px;color:var(--bone);line-height:1;}
+.mode-desc{font-size:12px;color:var(--smoke2);margin-top:3px;line-height:1.4;}
+.mode-arrow{color:var(--smoke);margin-left:auto;flex-shrink:0;font-size:18px;}
+.version{text-align:center;font-size:10px;color:var(--smoke);padding:10px 0 6px;letter-spacing:1px;}
+
+/* ─── SETUP ───────────────────────────────────────── */
+.setup-body{padding:calc(var(--topbar-h) + 12px) 14px 30px;}
+.setup-field{margin-bottom:14px;}
+.setup-field label{font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--smoke2);display:block;margin-bottom:5px;font-weight:500;}
+.setup-field input,.setup-field select{width:100%;font-size:15px;padding:9px 12px;border-radius:var(--r);border:1px solid rgba(255,255,255,.12);background:var(--pit3);color:var(--bone);font-family:'DM Mono',monospace;-webkit-appearance:none;}
+.setup-field input:focus,.setup-field select:focus{outline:none;border-color:var(--ember);}
+.setup-note{font-size:11px;color:var(--smoke);margin-top:3px;}
+.btn-primary{width:100%;padding:13px;background:var(--ember);color:#fff;border:none;border-radius:var(--r);font-size:14px;font-weight:500;cursor:pointer;letter-spacing:1.5px;text-transform:uppercase;font-family:'DM Sans',sans-serif;margin-top:6px;transition:background .15s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.btn-primary:hover{background:var(--ember2);}
+.btn-sec{width:100%;padding:10px;background:transparent;color:var(--smoke2);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);font-size:13px;cursor:pointer;margin-top:6px;letter-spacing:.5px;text-transform:uppercase;font-family:'DM Sans',sans-serif;}
+
+/* ─── MODALS ──────────────────────────────────────── */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.82);display:none;align-items:center;justify-content:center;z-index:200;padding:20px;}
+.modal-box{background:var(--pit2);border:1px solid rgba(232,70,10,.5);border-radius:10px;padding:22px;width:100%;max-width:340px;}
+.modal-icon{font-size:28px;color:var(--ember);margin-bottom:8px;}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1.5px;color:var(--bone);margin-bottom:6px;line-height:1.2;}
+.modal-body{font-size:13px;color:var(--smoke2);line-height:1.65;margin-bottom:16px;white-space:pre-line;}
+.modal-close{width:100%;padding:11px;background:var(--ember);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;letter-spacing:1px;text-transform:uppercase;font-family:'DM Sans',sans-serif;}
+.confirm-box{background:var(--pit2);border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:22px;width:100%;max-width:300px;text-align:center;}
+.confirm-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:1.5px;color:var(--bone);margin-bottom:6px;}
+.confirm-body{font-size:13px;color:var(--smoke2);margin-bottom:18px;line-height:1.5;}
+.confirm-btns{display:flex;gap:8px;}
+.confirm-yes{flex:1;padding:10px;background:var(--red);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:500;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;font-family:'DM Sans',sans-serif;}
+.confirm-no{flex:1;padding:10px;background:transparent;color:var(--smoke2);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);font-size:13px;cursor:pointer;letter-spacing:.5px;text-transform:uppercase;font-family:'DM Sans',sans-serif;}
+
+@media(min-width:500px){
+  .del-grid{grid-template-columns:repeat(4,1fr);}
+  .stat-grid{grid-template-columns:repeat(4,1fr);}
+  .tab{font-size:10px;}
+  .nb{font-size:9px;}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+<!-- ══════ WELCOME ══════ -->
+<div class="screen active" id="screen-welcome">
+  <div class="topbar" style="position:fixed;">
+    <div style="flex:1"><span class="topbar-logo">I COBRA</span><span class="topbar-sub">BBQ TEAM — Competition Manager</span></div>
+  </div>
+  <div class="welcome-hero">
+    <div class="hero-logo">I COBRA</div>
+    <div class="hero-sub2">BBQ TEAM</div>
+    <div class="hero-line"></div>
+    <div class="hero-desc">KCBS Master Series — Competition Manager v5</div>
+  </div>
+  <div style="padding:0 14px 30px;">
+    <div class="sec">Modalità gara</div>
+    <div class="mode-card" onclick="selectMode('master')">
+      <div class="mode-icon"><i class="ti ti-flame"></i></div>
+      <div><div class="mode-title">Master Series</div><div class="mode-desc">Domenica di gara — 4 proteine<br>Chicken · Ribs · Pork · Brisket</div></div>
+      <i class="ti ti-chevron-right mode-arrow"></i>
+    </div>
+    <div class="mode-card" onclick="selectMode('onemeat')">
+      <div class="mode-icon"><i class="ti ti-target"></i></div>
+      <div><div class="mode-title">One Meat</div><div class="mode-desc">Simulazione — Ribs e/o Chicken<br>Orario consegna personalizzabile</div></div>
+      <i class="ti ti-chevron-right mode-arrow"></i>
+    </div>
+    <div class="version">v5.0 · I Cobra BBQ 2026 · Basato sul documento ufficiale timeline</div>
+  </div>
+</div>
+
+<!-- ══════ SETUP ══════ -->
+<div class="screen" id="screen-setup">
+  <div class="topbar">
+    <button class="back-btn" onclick="showScreen('screen-welcome')"><i class="ti ti-arrow-left"></i></button>
+    <div style="flex:1"><span class="topbar-logo" id="setup-title">Setup Consegne</span></div>
+  </div>
+  <div class="setup-body">
+    <div id="master-fields">
+      <div class="sec">Orari consegna domenica</div>
+      <div class="setup-field"><label>🍗 Chicken</label><input type="time" id="t-chicken" value="12:00"></div>
+      <div class="setup-field"><label>🐷 Ribs</label><input type="time" id="t-ribs" value="12:30"></div>
+      <div class="setup-field"><label>🐷 Pork</label><input type="time" id="t-pork" value="13:00"></div>
+      <div class="setup-field"><label>🥩 Brisket</label><input type="time" id="t-brisket" value="13:30"></div>
+      <div class="sec">Smoker config</div>
+      <div class="setup-field">
+        <label>Ore totali brisket (fuoco → consegna)</label>
+        <input type="number" id="offset-brisket" value="9" min="7" max="12" style="width:80px">
+        <div class="setup-note">Default 9h — WSM 57" a 300°F stabili</div>
+      </div>
+    </div>
+    <div id="onemeat-fields" style="display:none">
+      <div class="sec">Configurazione</div>
+      <div class="setup-field"><label>Proteine</label>
+        <select id="om-protein">
+          <option value="both">Ribs + Chicken</option>
+          <option value="ribs">Solo Ribs</option>
+          <option value="chicken">Solo Chicken</option>
+        </select>
+      </div>
+      <div class="setup-field"><label>Consegna Ribs</label><input type="time" id="om-t-ribs" value="16:00"></div>
+      <div class="setup-field"><label>Consegna Chicken</label><input type="time" id="om-t-chicken" value="15:30"></div>
+    </div>
+    <button class="btn-primary" onclick="startComp()"><i class="ti ti-player-play"></i> Avvia gara</button>
+    <button class="btn-sec" onclick="showScreen('screen-welcome')">Indietro</button>
+  </div>
+</div>
+
+<!-- ══════ MAIN ══════ -->
+<div class="screen" id="screen-main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <button class="home-btn" onclick="confirmHome()"><i class="ti ti-home"></i> Home</button>
+    <div style="flex:1;padding-left:8px;"><span class="topbar-logo">I Cobra</span><span class="topbar-sub" id="mode-label">Master Series</span></div>
+    <span class="live-badge" id="live-clock">--:--</span>
+    <button class="icon-btn" onclick="demoAlert()" title="Test alert"><i class="ti ti-bell"></i></button>
+  </div>
+
+  <!-- TIMER BAR (fixed under topbar) -->
+  <div class="timer-bar visible" id="timer-bar">
+    <svg class="tbr-ring" id="tbr-svg" width="64" height="64" viewBox="0 0 64 64">
+      <circle class="tbr-ring-bg" cx="32" cy="32" r="27"/>
+      <circle class="tbr-ring-fill" id="tbr-fill" cx="32" cy="32" r="27" stroke="#e8460a" stroke-dasharray="169.6" stroke-dashoffset="169.6"/>
+    </svg>
+    <div class="tbr-info">
+      <div class="tbr-countdown" id="tbr-time">--:--</div>
+      <div class="tbr-sub" id="tbr-sub">Inizia la gara…</div>
+      <div class="tbr-dots" id="tbr-dots"></div>
+    </div>
+    <div class="tbr-right">
+      <div class="tbr-badge" id="tbr-badge">—</div>
+      <div class="tbr-nextstep" id="tbr-nextstep"></div>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs" id="main-tabs">
+    <div class="tab active" id="tab-dash" onclick="switchTab('dash')"><i class="ti ti-layout-dashboard"></i>Dashboard</div>
+    <div class="tab" id="tab-timeline" onclick="switchTab('timeline')"><i class="ti ti-list"></i>Timeline</div>
+    <div class="tab" id="tab-proteine" onclick="switchTab('proteine')"><i class="ti ti-meat"></i>Proteine</div>
+    <div class="tab" id="tab-check" onclick="switchTab('check')"><i class="ti ti-checklist"></i>Check</div>
+    <div class="tab" id="tab-stats" onclick="switchTab('stats')"><i class="ti ti-chart-bar"></i>Stats</div>
+  </div>
+
+  <!-- PANES -->
+  <div class="content" id="pane-dash">
+    <div id="dash-smoker"></div>
+    <div id="dash-urgent"></div>
+    <div class="sec">Prossima attività</div>
+    <div id="dash-next"></div>
+    <div class="sec">In corso ora</div>
+    <div id="dash-active"></div>
+    <div class="sec">Consegne</div>
+    <div class="del-grid" id="dash-deliveries"></div>
+  </div>
+
+  <div class="content" id="pane-timeline" style="display:none">
+    <div class="filters" id="f-proteina">
+      <button class="fb on" onclick="setFilter('p','all',this)">Tutti</button>
+      <button class="fb" id="fb-chicken" onclick="setFilter('p','chicken',this)">Chicken</button>
+      <button class="fb" id="fb-ribs" onclick="setFilter('p','ribs',this)">Ribs</button>
+      <button class="fb" id="fb-pork" onclick="setFilter('p','pork',this)">Pork</button>
+      <button class="fb" id="fb-brisket" onclick="setFilter('p','brisket',this)">Brisket</button>
+    </div>
+    <div class="filters" id="f-persona">
+      <button class="fb on" onclick="setFilter('pe','all',this)">Tutti</button>
+      <button class="fb" onclick="setFilter('pe','Marco',this)">Marco</button>
+      <button class="fb" onclick="setFilter('pe','Matteo',this)">Matteo</button>
+      <button class="fb" onclick="setFilter('pe','Simone',this)">Simone</button>
+    </div>
+    <div id="timeline-list"></div>
+  </div>
+
+  <div class="content" id="pane-proteine" style="display:none">
+    <div class="stat-grid" id="proteina-stats"></div>
+    <div id="proteina-prog"></div>
+  </div>
+
+  <div class="content" id="pane-check" style="display:none">
+    <div id="checklist-wrap"></div>
+  </div>
+
+  <div class="content" id="pane-stats" style="display:none">
+    <div class="sec">Performance gara</div>
+    <div class="stats-kpi-row" id="stats-kpis"></div>
+    <div class="sec">Cronologia step</div>
+    <div class="card" id="stats-tl" style="padding:8px 12px;"></div>
+    <div class="sec">Andamento ritardo (min)</div>
+    <div class="card" style="padding:10px 12px;"><div class="pace-chart" id="pace-chart"></div></div>
+    <div class="sec">Calcolatore KCBS Score</div>
+    <div class="card" style="padding:14px;">
+      <div style="font-size:11px;color:var(--smoke2);margin-bottom:10px;">Somma dei 5 migliori giudici per categoria (max 45):</div>
+      <div id="kcbs-proteins"></div>
+      <div class="kcbs-total-box">
+        <div style="font-size:10px;text-transform:uppercase;color:var(--smoke2);letter-spacing:1px;font-weight:500;">Punteggio Totale Overall</div>
+        <div class="kcbs-total-val" id="kcbs-total">0.0000</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <div class="nav">
+    <button class="nb active" id="nav-dash" onclick="switchTab('dash')"><i class="ti ti-layout-dashboard"></i>Dashboard</button>
+    <button class="nb" id="nav-timeline" onclick="switchTab('timeline')"><i class="ti ti-list"></i>Timeline</button>
+    <button class="nb" id="nav-proteine" onclick="switchTab('proteine')"><i class="ti ti-meat"></i>Proteine</button>
+    <button class="nb" id="nav-check" onclick="switchTab('check')"><i class="ti ti-checklist"></i>Check</button>
+    <button class="nb" id="nav-stats" onclick="switchTab('stats')"><i class="ti ti-chart-bar"></i>Stats</button>
+  </div>
+</div>
+
+<!-- ALERT MODAL -->
+<div class="modal-bg" id="modal">
+  <div class="modal-box">
+    <div class="modal-icon"><i class="ti ti-bell-ringing"></i></div>
+    <div class="modal-title" id="modal-title">Alert</div>
+    <div class="modal-body" id="modal-body">—</div>
+    <button class="modal-close" onclick="closeModal()">OK, capito</button>
+  </div>
+</div>
+
+<!-- CONFIRM HOME -->
+<div class="modal-bg" id="confirm-modal">
+  <div class="confirm-box">
+    <div class="modal-icon" style="text-align:center"><i class="ti ti-home"></i></div>
+    <div class="confirm-title">Torna alla home?</div>
+    <div class="confirm-body">La gara verrà resettata. Tutti i progressi andranno persi.</div>
+    <div class="confirm-btns">
+      <button class="confirm-yes" onclick="doGoHome()">Sì, esci</button>
+      <button class="confirm-no" onclick="closeConfirm()">Annulla</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   AUDIO ENGINE
+   ═══════════════════════════════════════════════════════════════ */
+let _actx=null;
+function getACtx(){
+  if(!_actx)try{_actx=new(window.AudioContext||window.webkitAudioContext)();}catch(e){}
+  if(_actx&&_actx.state==='suspended')_actx.resume();
+  return _actx;
+}
+function beep(freq,dur,vol,type){
+  const ctx=getACtx();if(!ctx)return;
+  const o=ctx.createOscillator(),g=ctx.createGain();
+  o.connect(g);g.connect(ctx.destination);
+  o.type=type||'sine';o.frequency.value=freq;
+  g.gain.setValueAtTime(vol||0.4,ctx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+dur);
+  o.start();o.stop(ctx.currentTime+dur);
+}
+function playAlert(urgent){
+  if(urgent){[0,.18,.36].forEach(t=>setTimeout(()=>beep(880,.15,.5,'square'),t*1000));}
+  else{beep(660,.12,.35,'sine');setTimeout(()=>beep(880,.2,.35,'sine'),150);}
+  if(navigator.vibrate)navigator.vibrate(urgent?[200,100,200,100,200]:[150,80,150]);
+}
+document.addEventListener('touchstart',()=>getACtx(),{once:true});
+document.addEventListener('click',()=>getACtx(),{once:true});
+
+/* ═══════════════════════════════════════════════════════════════
+   LAYOUT OFFSET HELPER
+   Calculates the correct top padding for .content panes
+   based on which fixed bars are visible.
+   ═══════════════════════════════════════════════════════════════ */
+function updateContentOffset(){
+  const topbarH=53;
+  const timerbarH=80;
+  const tabsH=38;
+  const total=topbarH+timerbarH+tabsH;
+  // position tabs right under timer bar
+  const tabs=document.getElementById('main-tabs');
+  if(tabs) tabs.style.top=(topbarH+timerbarH)+'px';
+  // set padding-top for all content panes in screen-main
+  ['dash','timeline','proteine','check','stats'].forEach(id=>{
+    const p=document.getElementById('pane-'+id);
+    if(p) p.style.paddingTop=(total+12)+'px';
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATE
+   ═══════════════════════════════════════════════════════════════ */
+let MODE='master',DT={},STEPS=[];
+let fprot='all',fpers='all';
+let DONE={},CT={};      // CT = completion times
+let ACFG={};            // { id: { on:bool, min:5|10|15|20 } }
+let CHKSTATE={};
+let clockInterval=null,timerIdx=0;
+const NM={chicken:'Chicken',ribs:'Ribs',pork:'Pork',brisket:'Brisket'};
+const PC={
+  chicken:{bg:'rgba(59,130,246,.22)',color:'#93c5fd',cls:'p-chicken'},
+  ribs:   {bg:'rgba(239,68,68,.22)', color:'#fca5a5',cls:'p-ribs'},
+  pork:   {bg:'rgba(34,197,94,.22)', color:'#86efac',cls:'p-pork'},
+  brisket:{bg:'rgba(251,191,36,.22)',color:'#fde68a',cls:'p-brisket'},
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILS
+   ═══════════════════════════════════════════════════════════════ */
+function t2m(s){const[h,m]=s.split(':').map(Number);return h*60+m;}
+function m2t(m){const mm=((m%1440)+1440)%1440;return String(Math.floor(mm/60)).padStart(2,'0')+':'+String(mm%60).padStart(2,'0');}
+function nowM(){const n=new Date();return n.getHours()*60+n.getMinutes();}
+function acfg(id){return ACFG[id]||{on:false,min:10};}
+
+/* ═══════════════════════════════════════════════════════════════
+   NAVIGATION
+   ═══════════════════════════════════════════════════════════════ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+function confirmHome(){document.getElementById('confirm-modal').style.display='flex';}
+function closeConfirm(){document.getElementById('confirm-modal').style.display='none';}
+function doGoHome(){
+  closeConfirm();
+  if(clockInterval)clearInterval(clockInterval);
+  DONE={};CT={};ACFG={};STEPS={};DT={};timerIdx=0;fprot='all';fpers='all';
+  showScreen('screen-welcome');
+}
+function selectMode(m){
+  MODE=m;
+  document.getElementById('master-fields').style.display=m==='master'?'block':'none';
+  document.getElementById('onemeat-fields').style.display=m==='onemeat'?'block':'none';
+  document.getElementById('setup-title').textContent=m==='master'?'Setup Consegne':'One Meat — Setup';
+  showScreen('screen-setup');
+}
+function startComp(){
+  if(MODE==='master'){
+    DT={chicken:t2m(document.getElementById('t-chicken').value),ribs:t2m(document.getElementById('t-ribs').value),pork:t2m(document.getElementById('t-pork').value),brisket:t2m(document.getElementById('t-brisket').value)};
+    STEPS=buildMaster();
+    ['chicken','ribs','pork','brisket'].forEach(p=>{const b=document.getElementById('fb-'+p);if(b)b.style.display='';});
+  }else{
+    const p=document.getElementById('om-protein').value;
+    DT={};
+    if(p!=='chicken')DT.ribs=t2m(document.getElementById('om-t-ribs').value);
+    if(p!=='ribs')DT.chicken=t2m(document.getElementById('om-t-chicken').value);
+    STEPS=buildOneMeat(p);
+    ['pork','brisket'].forEach(pr=>{const b=document.getElementById('fb-'+pr);if(b)b.style.display='none';});
+  }
+  document.getElementById('mode-label').textContent=MODE==='master'?'Master Series':'One Meat';
+  timerIdx=0;
+  updateContentOffset();
+  showScreen('screen-main');
+  switchTab('dash');
+  renderAll();
+  if(clockInterval)clearInterval(clockInterval);
+  clockInterval=setInterval(tick,30000);
+  tick();
+}
+function switchTab(t){
+  ['dash','timeline','proteine','check','stats'].forEach(x=>{
+    const p=document.getElementById('pane-'+x);if(p)p.style.display=x===t?'block':'none';
+    const tb=document.getElementById('tab-'+x);if(tb)tb.classList.toggle('active',x===t);
+    const nb=document.getElementById('nav-'+x);if(nb)nb.classList.toggle('active',x===t);
+  });
+  if(t==='dash')renderDash();
+  if(t==='timeline')renderTimeline();
+  if(t==='proteine')renderProteine();
+  if(t==='stats'){renderStats();renderKCBS();}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TIMER BAR
+   ═══════════════════════════════════════════════════════════════ */
+function renderTimerBar(){
+  const prots=Object.keys(DT);if(!prots.length)return;
+  const now=nowM();
+  const pending=prots.filter(p=>DT[p]>now);
+  if(pending.length&&!pending.includes(prots[timerIdx]))timerIdx=prots.indexOf(pending[0]);
+  const pr=prots[timerIdx];
+  const dt=DT[pr],diff=dt-now,isDone=diff<=0;
+  const hh=Math.floor(Math.abs(diff)/60),mm=Math.abs(diff)%60;
+  const str=isDone?'DONE':`${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}`;
+  const cls=isDone?'':diff<=15?'urg':diff<=60?'hot':'';
+  const R=27,C=2*Math.PI*R;
+  const pct=Math.min(1,Math.max(0,(180-Math.max(0,diff))/180));
+  const sc=isDone?'#22c55e':diff<=15?'#ef4444':diff<=60?'#f97316':'#e8460a';
+  const fill=document.getElementById('tbr-fill');
+  if(fill){fill.setAttribute('stroke',sc);fill.setAttribute('stroke-dasharray',C.toFixed(1));fill.setAttribute('stroke-dashoffset',(C*(1-pct)).toFixed(1));}
+  const tEl=document.getElementById('tbr-time');if(tEl){tEl.textContent=str;tEl.className='tbr-countdown '+cls;}
+  const sEl=document.getElementById('tbr-sub');if(sEl)sEl.textContent=`${NM[pr]} — consegna ${m2t(dt)}`;
+  const bEl=document.getElementById('tbr-badge');
+  if(bEl){const pc=PC[pr]||{bg:'rgba(255,255,255,.1)',color:'var(--smoke2)'};bEl.textContent=NM[pr];bEl.style.cssText=`background:${pc.bg};color:${pc.color};font-family:'Bebas Neue',sans-serif;letter-spacing:1.5px;font-size:13px;padding:3px 10px;border-radius:20px;`;}
+  const ns=STEPS.filter?STEPS.filter(s=>!DONE[s.id]&&s.t>now&&s.pr===pr).sort((a,b)=>a.t-b.t)[0]:null;
+  const nsEl=document.getElementById('tbr-nextstep');if(nsEl)nsEl.textContent=ns?`▶ ${m2t(ns.t)} ${ns.ti.substring(0,26)}…`:'Pronti per consegna';
+  const dotsEl=document.getElementById('tbr-dots');
+  if(dotsEl)dotsEl.innerHTML=prots.map((p,i)=>{const d=DT[p]<=now,a=i===timerIdx;return`<span class="dot ${d?'dot-done':a?'active':''}" onclick="setTimerIdx(${i})" title="${NM[p]}"></span>`;}).join('');
+}
+function setTimerIdx(i){timerIdx=i;renderTimerBar();}
+
+/* ═══════════════════════════════════════════════════════════════
+   BUILD STEPS — MASTER
+   ═══════════════════════════════════════════════════════════════ */
+function buildMaster(){
+  const c=DT.chicken,r=DT.ribs,p=DT.pork,b=DT.brisket;
+  const off=Number(document.getElementById('offset-brisket').value)||9;
+  return [
+    {id:'b44', t:b-off*60,      ref:'44', ti:'Set WSM 57" → 300°F (brisket)', pr:'brisket',pe:['Simone'],temp:'300°F',det:'Settare WSM 57" a 300°F stabili prima di caricare il brisket.\nRaggiungi temperatura prima del rub.'},
+    {id:'b45', t:b-off*60+30,  ref:'45', ti:'Rub brisket', pr:'brisket',pe:['Marco'],det:'Fat side: solo Meat Church Blanco.\nMeat side: MC Blanco + Kosmos GJ + BH Sweet&Savory.\nBinder: Worcestershire. Riposa fino all\'entrata in smoker.'},
+    {id:'p29', t:b-off*60+30,  ref:'29', ti:'Rub pork (butt + money)', pr:'pork',pe:['Marco'],det:'BH Sweet&Savory + MC Blanco + Kosmos GJ.\nLasciare settare 30 min.'},
+    {id:'b46', t:b-off*60+75,  ref:'46', ti:'Brisket → WSM 57" piano alto', pr:'brisket',pe:['Marco'],temp:'300-310°F',det:'Chunks pecan + cipolle sul carbone.\nTermometro nel flat.\n⟳ griglia 180° ogni 15 min.\nSpray duck fat lati ogni 30 min.\nTarget foil: 150-160°F interno.'},
+    {id:'p30', t:b-off*60+75,  ref:'30', ti:'Pork butt → WSM 18"', pr:'pork',pe:['Marco'],temp:'300°F',det:'1 chunk pecan + 2-3 cipolle. Fat cap UP.\nSpray butter/ghee dopo 40 min (passo 31).'},
+    {id:'p32', t:b-off*60+120, ref:'32', ti:'Money muscle → WSM 18"', pr:'pork',pe:['Marco'],temp:'300°F',det:'Prepara subito liquid wrap:\n1 Cup Heat Riles Butter Bath + 3 Cup apple juice\n+ 2tsp BH Sweet&Savory + 2tsp BH Beef Marinade Mix'},
+    {id:'c1',  t:r-5*60+30,    ref:'1',  ti:'Tira fuori injection chicken dal frigo', pr:'chicken',pe:['Matteo'],det:'Heat Riles Chicken Injection deve essere a temperatura ambiente.\nPrepara siringa e ago. Brine overnight (passo 1 sabato).'},
+    {id:'rb13',t:r-6*60,       ref:'13', ti:'Rub ribs — lato ossa + set drum', pr:'ribs',pe:['Marco'],temp:'300°F drum',det:'Settare il drum a 300°F.\nRub lato ossa: Kosmos GJ + BH Sweet&Savory. Senza binder.'},
+    {id:'c3',  t:r-5*60+30,    ref:'3',  ti:'Injection chicken', pr:'chicken',pe:['Matteo'],det:'Togli dalla brine, asciuga.\nRiforma cuscino/burrito, impellicola singolarmente.\nInietta da impellicolate — non si perdono i succhi.\nCambro freddo fino al passo (4).'},
+    {id:'rb14',t:r-5*60+30,    ref:'14', ti:'Rub ribs — lato carne', pr:'ribs',pe:['Marco'],det:'Kosmos GJ + BH Sweet&Savory sul lato carne.'},
+    {id:'rb15',t:r-5*60,       ref:'15', ti:'Ribs → drum 300°F', pr:'ribs',pe:['Marco','Simone'],temp:'300°F',det:'Chunks pecan + cipolle + water pan (sinistra del camino).\n⟳ griglia 180° ogni 15 min — non di più!'},
+    {id:'rb16',t:r-4*60+30,    ref:'16', ti:'Ribs — 2° rub + ruota 90°', pr:'ribs',pe:['Marco'],det:'Pulisci sangue con scottex se serve.\nSecondo giro di rub. Ruota 90°. Continua ⟳ ogni 15 min.'},
+    {id:'rb17',t:r-4*60,       ref:'17', ti:'Ribs — volta MEAT SIDE DOWN', pr:'ribs',pe:['Marco'],det:'Voltare meat side down cercando il friggere nelle ossa.\n⟳ ogni 15 min.'},
+    {id:'p33', t:r-4*60+30,    ref:'33', ti:'Foil pork butt', pr:'pork',pe:['Matteo'],det:'Vassoio: 50g burro + metà liquid wrap + rub.\nTermometro nel butt. Chiudi doppia stagnola. Torna in WSM.'},
+    {id:'b47', t:r-4*60,       ref:'47', ti:'Prepara liquid wrap brisket', pr:'brisket',pe:['Matteo'],det:'1L brodo manzo + 100g burro + ½ cup BH Beef Marinade Mix.\nRiscalda. Pronto prima di aprire il brisket.'},
+    {id:'rb18',t:r-3*60+30,    ref:'18', ti:'Ribs — cerca colore e friggere', pr:'ribs',pe:['Marco'],det:'Cercare colore intenso e friggere nelle ossa prima del foil.'},
+    {id:'p34', t:r-3*60+45,    ref:'34', ti:'Foil money muscle ~160-170°F', pr:'pork',pe:['Matteo'],temp:'160-170°F',det:'Vassoio separato: 50g burro + restante liquid wrap.\nSpray butter + rub. Termometro. Chiudi doppia stagnola → WSM.'},
+    {id:'b48', t:r-3*60+30,    ref:'48', ti:'Foil brisket ~150-160°F', pr:'brisket',pe:['Marco'],temp:'150-160°F',det:'Point e flat in vassoi SEPARATI!\n50g burro + metà wrap per vassoio. Chiudi bene.\nTarget: flat 205-210°F / point 210-215°F.'},
+    {id:'rb19',t:r-3*60+15,    ref:'19', ti:'Foil ribs', pr:'ribs',pe:['Marco'],det:'Doppia stagnola. 100g burro al centro. Ribs MEAT SIDE UP.\nBH Tennessee + BH Raspberry (meno) + zucchero di canna.\nChiudi: lato lungo poi corti. ⟳ ogni 15 min.'},
+    {id:'c4',  t:c-3*60+30,    ref:'4',  ti:'Prep chicken — rub + pizza pan', pr:'chicken',pe:['Matteo'],det:'Togli dalla pellicola. Pelle verso il basso.\nRub BH Sweet&Savory lato carne.\nChiudi a cuscino, rub lato pelle.\nSu pizza pan spruzzato duck fat.'},
+    {id:'rb20',t:r-2*60+50,    ref:'20', ti:'Apri foil ribs — check 160-170°F', pr:'ribs',pe:['Marco'],temp:'160-170°F',det:'Aprire stagnola, verificare temperatura.\nGira MEAT SIDE DOWN → richiudi bene.'},
+    {id:'rb21',t:r-2*60+30,    ref:'21', ti:'Ribs → rest cambro caldo', pr:'ribs',pe:['Marco'],temp:'200-210°F + tenderness',det:'Sonda entra/esce senza resistenza → cambro caldo.\nDrum libero per glaze. Totale cottura ~2h45.'},
+    {id:'c5',  t:c-2*60+30,    ref:'5',  ti:'Chicken → WSM 57" piano basso', pr:'chicken',pe:['Marco'],temp:'360-370°F',det:'1 chunk pecan + cipolle. Su pizza pan.\n⟳ ogni 15 min. Spray duck fat ogni 30 min.\nTarget foil: 160-170°F interni (~40 min).'},
+    {id:'c6',  t:c-2*60,       ref:'6',  ti:'Ruota chicken + spray duck fat', pr:'chicken',pe:['Simone'],det:'⟳ ogni 15 min. Spray duck fat ogni 30 min.\nAbbassa WSM verso 350-330°F.'},
+    {id:'c7',  t:c-110,        ref:'7',  ti:'Foil chicken ~160-170°F', pr:'chicken',pe:['Marco'],temp:'160-170°F',det:'200g burro fuso nel vassoio. Copri.\nWSM a 300-330°F. ⟳ ogni 15 min. Target: 205-210°F interni.'},
+    {id:'b49', t:b-90,         ref:'49', ti:'Brisket → rest cambro caldo', pr:'brisket',pe:['Marco'],temp:'Flat 205-210°F · Point 210-215°F',det:'Testa tenderness con sonda.\nDiretto in cambro caldo. Rest minimo 60-90 min.'},
+    {id:'p35', t:p-90,         ref:'35', ti:'Pork → rest cambro caldo', pr:'pork',pe:['Marco'],temp:'200-205°F + tenderness',det:'Butt ~5h30 totali / Money ~4h30 totali.\nEntrambi in cambro caldo.'},
+    {id:'c8',  t:c-70,         ref:'8',  ti:'Chicken → rest cambro caldo', pr:'chicken',pe:['Marco'],temp:'205-210°F',det:'Rest in cambro caldo fino a 10 min prima della consegna.'},
+    {id:'rb22',t:c-40,         ref:'22', ti:'Scalda glaze — Ribs + Pork + Chicken', pr:'ribs',pe:['Matteo'],det:'Ribs (22): 2p BH Original + 1p BH Tennessee + ¼p Smokey Mtn.\nPork (36): 2p BH Original + 1p BH Tennessee + 1p Smokey Mtn.\nChicken (9): ½c BH Tennessee + 1c BH Original + 2tsp Smokey Mtn.\nFornello — tutto al caldo.'},
+    {id:'lt',  t:c-30,         ref:'—',  ti:'Taglia lattuga garnish', pr:'chicken',pe:['Simone'],det:'Lattuga in pellicola. Rondelle ~2cm.\nIn vassoio alluminio, pellicola sulle singole rondelle. Frigo.\nTogli pellicola SOLO al momento del box.'},
+    {id:'c9',  t:c-20,         ref:'9',  ti:'Chicken — glaze finale + 5 min WSM', pr:'chicken',pe:['Matteo'],det:'Re-injection con succhi vassoio (piccola pompata).\nImmersione totale nella salsa glaze. Final dust meat side.\n5 min in WSM piano basso per settare la glaze.'},
+    {id:'c10', t:c-10,         ref:'10', ti:'Prep box CHICKEN — CONSEGNA '+m2t(c), pr:'chicken',pe:['tutti'],det:'Garnish nel box. Vaporizzata acqua + sale fino.\nPulisci bordi. Chiudi.\n⏰ CONSEGNA '+m2t(c)},
+    {id:'rb23',t:r-30,         ref:'23', ti:'Ribs foil boat + glaze + final dust', pr:'ribs',pe:['Marco'],det:'Apri dal foil — crea foil boat.\nMaple syrup → glaze abbondante → final dust.'},
+    {id:'rb24',t:r-25,         ref:'24', ti:'Ribs → drum + chips JD', pr:'ribs',pe:['Marco'],temp:'drum',det:'Foil boat MEAT SIDE UP nel drum.\nChips Jack Daniel\'s. ⟳ ogni 15 min.'},
+    {id:'rb25',t:r-20,         ref:'25', ti:'Ribs — taglio e selezione', pr:'ribs',pe:['Marco'],det:'Tagliere MEAT SIDE DOWN. Maple syrup + glaze + final dust.\nTaglia singole ribs, gira MEAT SIDE UP, pennella liquido foil.\nSeleziona le più morbide e belle.'},
+    {id:'b50', t:r-15,         ref:'50', ti:'Brisket → drum: BH Smokey Mtn + set glaze', pr:'brisket',pe:['Marco'],det:'Spennella BH Smokey Mountain su flat e point.\nDrum 10-20 min per settare la glaze.'},
+    {id:'p37', t:r-15,         ref:'37', ti:'Money — 10 min drum asciugatura', pr:'pork',pe:['Marco'],det:'Prima della glaze: 10 min nel drum per asciugare i money muscle.'},
+    {id:'p38', t:r-12,         ref:'38', ti:'Pulled butt — selezione + glaze', pr:'pork',pe:['Matteo'],det:'Final dust + liquido vassoio + glaze. Mescola. Chiudi vassoio al caldo.'},
+    {id:'rb26',t:r-5,          ref:'26', ti:'Prep box RIBS — CONSEGNA '+m2t(r), pr:'ribs',pe:['tutti'],det:'6-8 ribs. Salsare i lati. Final dust light se serve.\n⏰ CONSEGNA '+m2t(r)},
+    {id:'p39', t:r-5,          ref:'39', ti:'Money — immersione totale glaze', pr:'pork',pe:['Marco'],det:'Immersione da interi (NON pennello — immersione!).'},
+    {id:'p40', t:r+5,          ref:'40', ti:'Money → drum 5-10 min set glaze', pr:'pork',pe:['Marco'],det:'Lasciare settare la salsa 5-10 min nel drum.'},
+    {id:'p41', t:p-15,         ref:'41', ti:'Pork medaglioni + prep box — CONSEGNA '+m2t(p), pr:'pork',pe:['Marco','Matteo'],det:'Medaglioni spessi 1 dito.\nVassoio: liq. cottura + glaze + final dust.\nPulled nel box + medaglioni sopra.\nTennessee Red + glaze + final dust. Garnish.\n⏰ CONSEGNA '+m2t(p)},
+    {id:'b51', t:b-15,         ref:'51', ti:'Prep box BRISKET — CONSEGNA '+m2t(b), pr:'brisket',pe:['tutti'],det:'6 fette flat + 6 cubi point. Garnish.\nOre 13:00 prepara garnish nel box.\n⏰ CONSEGNA '+m2t(b)},
+  ].sort((a,b)=>a.t-b.t);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BUILD STEPS — ONE MEAT
+   ═══════════════════════════════════════════════════════════════ */
+function buildOneMeat(p){
+  const r=DT.ribs||0,c=DT.chicken||0,a=[];
+  if(p==='both'||p==='ribs')a.push(
+    {id:'or13',t:r-5*60,    ref:'13',ti:'Set drum + rub ribs lato ossa',pr:'ribs',pe:['Simone','Marco'],temp:'300°F',det:'Drum 300°F. Rub lato ossa: Kosmos GJ + BH S&S. Senza binder.'},
+    {id:'or14',t:r-4*60+30,ref:'14',ti:'Rub ribs lato carne',pr:'ribs',pe:['Marco'],det:'Kosmos GJ + BH Sweet&Savory sul lato carne.'},
+    {id:'or15',t:r-4*60,   ref:'15',ti:'Ribs → drum',pr:'ribs',pe:['Marco','Simone'],temp:'300°F',det:'Pecan + cipolle + water pan. ⟳ 180° ogni 15 min!'},
+    {id:'or16',t:r-3*60+30,ref:'16',ti:'2° rub + ruota 90°',pr:'ribs',pe:['Marco'],det:'Pulisci sangue. 2° rub. Ruota 90°. Continua ⟳.'},
+    {id:'or17',t:r-3*60+15,ref:'17',ti:'Volta MEAT SIDE DOWN',pr:'ribs',pe:['Marco'],det:'Cerca friggere nelle ossa. ⟳ ogni 15 min.'},
+    {id:'or18',t:r-3*60,   ref:'18',ti:'Cerca colore e friggere',pr:'ribs',pe:['Marco'],det:'Colore intenso prima del foil.'},
+    {id:'or19',t:r-2*60+45,ref:'19',ti:'Foil ribs',pr:'ribs',pe:['Marco'],det:'100g burro. MEAT SIDE UP.\nBH Tennessee + Raspberry + zucchero canna. Chiudi.'},
+    {id:'or20',t:r-2*60+15,ref:'20',ti:'Check foil ribs 160-170°F',pr:'ribs',pe:['Marco'],temp:'160-170°F',det:'Apri, verifica T. Gira MEAT SIDE DOWN → richiudi.'},
+    {id:'or21',t:r-2*60,   ref:'21',ti:'Ribs → rest cambro caldo',pr:'ribs',pe:['Marco'],temp:'200-210°F + tenderness',det:'Sonda senza resistenza → cambro caldo.'},
+    {id:'or22',t:r-55,     ref:'22',ti:'Scalda glaze ribs',pr:'ribs',pe:['Matteo'],det:'2p BH Original + 1p BH Tennessee + ¼p Smokey Mtn. Al caldo.'},
+    {id:'or23',t:r-45,     ref:'23',ti:'Ribs foil boat + glaze',pr:'ribs',pe:['Marco'],det:'Foil boat. Maple syrup + glaze abbondante + final dust.'},
+    {id:'or24',t:r-30,     ref:'24',ti:'Ribs → drum + chips JD',pr:'ribs',pe:['Marco'],det:'MEAT SIDE UP. Chips JD. ⟳ ogni 15 min.'},
+    {id:'or25',t:r-20,     ref:'25',ti:'Taglio e selezione ribs',pr:'ribs',pe:['Marco'],det:'Tagliere DOWN. Maple syrup + glaze + final dust. Taglia singole, gira UP, pennella.'},
+    {id:'or26',t:r-5,      ref:'26',ti:'Prep box RIBS — CONSEGNA '+m2t(r),pr:'ribs',pe:['tutti'],det:'⏰ CONSEGNA RIBS '+m2t(r)}
+  );
+  if(p==='both'||p==='chicken')a.push(
+    {id:'oc1', t:c-5*60,    ref:'1', ti:'Brine chicken (Heat Riles)',pr:'chicken',pe:['Simone'],det:'Heat Riles Chicken Injection & Brine. Cambro freddo almeno 2h.'},
+    {id:'oc3', t:c-4*60+30,ref:'3', ti:'Injection chicken',pr:'chicken',pe:['Matteo'],det:'Togli da brine, asciuga, forma cuscino, impellicola. Inietta da impellicolate. Cambro freddo.'},
+    {id:'oc4', t:c-3*60,   ref:'4', ti:'WSM 57" + rub chicken',pr:'chicken',pe:['Simone','Marco'],temp:'300-350°F',det:'Set WSM. Rub BH Sweet&Savory. Pizza pan spray duck fat.'},
+    {id:'oc5', t:c-2*60+30,ref:'5', ti:'Chicken → WSM 57"',pr:'chicken',pe:['Matteo'],temp:'360-370°F',det:'Pecan + cipolle. ⟳ ogni 15 min. Spray duck fat.'},
+    {id:'oc6', t:c-2*60,   ref:'6', ti:'Ruota + spray chicken',pr:'chicken',pe:['Simone'],det:'⟳ ogni 15 min. Spray duck fat ogni 30 min.'},
+    {id:'oc7', t:c-100,    ref:'7', ti:'Foil chicken 160-170°F',pr:'chicken',pe:['Marco'],temp:'160-170°F',det:'200g burro fuso. WSM 300-330°F.'},
+    {id:'oc8', t:c-70,     ref:'8', ti:'Chicken → rest cambro caldo',pr:'chicken',pe:['Marco'],temp:'205-210°F',det:'Rest fino a 10 min prima consegna.'},
+    {id:'oc9', t:c-50,     ref:'—', ti:'Taglia lattuga garnish',pr:'chicken',pe:['Matteo'],det:'Rondelle 2cm. Pellicola sulle singole. Frigo.'},
+    {id:'oc10',t:c-20,     ref:'9', ti:'Chicken glaze finale + 5 min WSM',pr:'chicken',pe:['Matteo'],det:'Re-injection succhi vassoio. Immersione totale glaze. Final dust. 5 min WSM.'},
+    {id:'oc11',t:c-10,     ref:'10',ti:'Prep box CHICKEN — CONSEGNA '+m2t(c),pr:'chicken',pe:['tutti'],det:'⏰ CONSEGNA CHICKEN '+m2t(c)}
+  );
+  return a.sort((a,b)=>a.t-b.t);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CHECKLIST DATA
+   ═══════════════════════════════════════════════════════════════ */
+const CL=[
+  {cat:'🔴 Smoker site',items:[
+    {t:'WSM 57" — Brisket + Chicken',r:'46,5'},{t:'WSM 18" — Pork',r:'30,32'},{t:'Drum Smoker — Ribs + glaze',r:'15,24'},
+    {t:'Carbone — tutti gli smoker',r:null},{t:'Chunks pecan',r:'15,30,46'},{t:'Cipolle bionde — tutti gli smoker',r:null},
+    {t:'Accendino / firelighter',r:null},{t:"Chips Jack Daniel's — ribs glaze",r:'24'},
+  ]},
+  {cat:'🔵 Attrezzatura cook',items:[
+    {t:'2-3 Taglieri grandi',r:'25,50'},{t:'Coltello disosso/flessibile',r:'25,50'},{t:'Coltello brisket lama dritta',r:'50'},
+    {t:'Coltello elettrico',r:null},{t:'Forbici carne',r:null},{t:'Pinzette sottili',r:null},{t:'Spatola ribs',r:'25'},
+    {t:'Pennello binder brisket',r:'45'},{t:'Pennelli salsa (min. 3)',r:'9,23,50'},{t:'Spray duck fat / butter',r:'6,31,46'},
+    {t:'Siringa injection',r:'3,12,28,43'},{t:'Ago needle 14 (brisket flat)',r:'43'},{t:'Ago needle 16 (pork)',r:'28'},
+    {t:'Pizza pan chicken',r:'4,5,9'},{t:'Separatore di grasso',r:'50'},{t:'Colino fine',r:'27'},
+    {t:'Macina spezie (final dust)',r:null},{t:'Set misuratori Cup+tsp',r:null},{t:'Caddy flat brisket',r:'45,50'},
+    {t:'Rub shaker / dosatore final dust',r:'9,23,25,50'},
+  ]},
+  {cat:'🟤 Materiali monouso',items:[
+    {t:'Vassoi alluminio vari misure',r:'foil+glaze'},{t:'Carta stagnola resistente',r:'19,47'},{t:'Pellicola trasparente',r:'3'},
+    {t:'Zip bag grandi (brine chicken)',r:'1'},{t:'Cup plastica con tappo',r:'salse'},{t:'Scottex abbondante',r:'16'},
+    {t:'Guanti in nitrile',r:null},{t:'Sacchetti pattume',r:null},
+  ]},
+  {cat:'🟢 Cambro & conservazione',items:[
+    {t:'Cambro caldo — rest carne',r:'8,21,35,49'},{t:'Cambro freddo — chicken post-inj',r:'3'},
+    {t:'Yeti/thermos per salse',r:'22,36'},{t:'Frigo — carne + injection',r:null},
+    {t:'Fornello elettrico — salse',r:'22,36'},{t:'Prezzemolo riccio / lattuga garnish',r:'10,26,41,51'},
+  ]},
+  {cat:'🔧 Sonde & tech',items:[
+    {t:'Sonde wireless (min. 4)',r:'tutti gli smoker'},{t:'Batterie sonde di riserva',r:null},{t:'Telefono/tablet per sonde',r:null},
+    {t:'Termometro istantaneo',r:'check T carne'},{t:'Orologio grande da tavolo',r:'timeline'},{t:'Questo dispositivo carico',r:null},
+  ]},
+  {cat:'🥩 Carne',items:[
+    {t:'Ribs — 3 slab St. Louis (9-10 ossa)',r:'cons. 12:30'},{t:'Chicken — 12-16 cosce pelle bianca',r:'cons. 12:00'},
+    {t:'Pork — 1 coppa intera (pulled)',r:'cons. 13:00'},{t:'Pork — 2/3 money muscle',r:'cons. 13:00'},
+    {t:'Brisket intero (point + flat)',r:'cons. 13:30'},
+  ]},
+  {cat:'🧂 Rub & injection',items:[
+    {t:'Blues Hog Sweet & Savory',r:'rub+final dust'},{t:'Kosmos Garlic Jalapeno',r:'13,14,45'},
+    {t:'Meat Church Blanco',r:'45,final dust'},{t:'BH Beef Marinade Mix',r:'11,27,42,47'},
+    {t:'Heat Riles Chicken Injection & Brine',r:'2,3'},{t:'Sale fino',r:'43,50'},{t:'Zucchero di canna',r:'19'},
+    {t:'Maple syrup',r:'23,25'},{t:'Worcestershire sauce',r:'45'},{t:'Apple juice',r:'32'},{t:'Heat Riles Butter Bath',r:'32'},
+  ]},
+  {cat:'🍶 Salse glaze',items:[
+    {t:'BH Original Sauce',r:'9,22,36'},{t:'BH Tennessee Red Sauce',r:'19,22,36,41'},
+    {t:'BH Smokey Mountain Sauce',r:'9,36,50'},{t:'BH Raspberry Sauce',r:'19'},
+  ]},
+  {cat:'🧈 Grassi & brodi',items:[
+    {t:'Burro non salato',r:'foil tutte le carni'},{t:'Duck fat / butter ghee spray',r:'6,31,46'},
+    {t:'Brodo pollo non salato',r:'1,27,32'},{t:'Brodo di manzo',r:'42,47,48'},
+  ]},
+  {cat:'🏕️ Logistica & comfort',items:[
+    {t:'Gazebo',r:null},{t:'Tavoli grandi x2-3',r:null},{t:'Sedie pieghevoli',r:null},{t:'Carica batterie',r:null},
+    {t:'Luci da lavoro + ciabatte',r:null},{t:'Prolunga principale',r:null},{t:'Estintore',r:null},
+    {t:'Medication kit / cerotti',r:null},{t:'Sapone + acqua da bere',r:null},
+  ]},
+];
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDER HELPERS
+   ═══════════════════════════════════════════════════════════════ */
+function pillProt(pr){const pc=PC[pr];return`<span class="pill ${pc?pc.cls:'p-person'}">${NM[pr]||pr}</span>`;}
+
+/* stepCard — used in Timeline only
+   Bell button is top-right; click toggles ON/OFF; when ON shows minute selector */
+function stepCard(s){
+  const done=DONE[s.id];
+  const cfg=acfg(s.id);
+  const ref=s.ref&&s.ref!=='—'?`<span class="card-ref">(${s.ref})</span>`:'';
+  const bellOn=cfg.on;
+  const mins=[5,10,15,20];
+  return`<div class="card ${done?'done-card':''}" id="card-${s.id}">
+    <div class="card-hdr">
+      <span class="card-time">${m2t(s.t)}</span>
+      <span class="card-title">${s.ti}${ref}</span>
+      <i class="ti ${done?'ti-circle-check':'ti-circle'} done-icon ${done?'chk':''}" onclick="toggleDone('${s.id}')"></i>
+      <div class="bell-btn ${bellOn?'bell-on':''}" id="bell-${s.id}" onclick="toggleBell('${s.id}')" title="${bellOn?'Alert ON — clicca per cambiare minuti':'Attiva alert sonoro'}">
+        <i class="ti ${bellOn?'ti-bell':'ti-bell-off'}"></i>
+      </div>
+    </div>
+    <div class="bell-mins ${bellOn?'open':''}" id="bm-${s.id}">
+      ${mins.map(m=>`<button class="bm ${cfg.min===m?'sel':''}" onclick="setBellMin('${s.id}',${m})">${m}m</button>`).join('')}
+    </div>
+    ${s.temp?`<div><span class="temp"><i class="ti ti-thermometer"></i>${s.temp}</span></div>`:''}
+    <div class="pills">${pillProt(s.pr)}${s.pe.map(p=>`<span class="pill p-person">${p}</span>`).join('')}</div>
+    <span class="expand-btn" onclick="xp('${s.id}')"><i class="ti ti-chevron-down"></i> Dettagli</span>
+    <div class="detail" id="det-${s.id}">${(s.det||'').replace(/\n/g,'<br>')}</div>
+  </div>`;
+}
+
+function xp(id){
+  const d=document.getElementById('det-'+id);d.classList.toggle('open');
+  const b=d.previousElementSibling;
+  b.innerHTML=d.classList.contains('open')?'<i class="ti ti-chevron-up"></i> Chiudi':'<i class="ti ti-chevron-down"></i> Dettagli';
+}
+function toggleDone(id){DONE[id]=!DONE[id];if(DONE[id])CT[id]=nowM();else delete CT[id];renderAll();}
+
+function toggleBell(id){
+  const cfg=acfg(id);
+  ACFG[id]={on:!cfg.on,min:cfg.min};
+  // only update this card in-place to avoid scroll jump
+  const bellBtn=document.getElementById('bell-'+id);
+  const bmsDiv=document.getElementById('bm-'+id);
+  if(!bellBtn||!bmsDiv)return;
+  const on=ACFG[id].on;
+  bellBtn.className='bell-btn '+(on?'bell-on':'');
+  bellBtn.querySelector('i').className='ti '+(on?'ti-bell':'ti-bell-off');
+  bmsDiv.className='bell-mins '+(on?'open':'');
+}
+function setBellMin(id,m){
+  const cfg=acfg(id);ACFG[id]={on:cfg.on,min:m};
+  // update just the minute buttons
+  const bmsDiv=document.getElementById('bm-'+id);
+  if(!bmsDiv)return;
+  bmsDiv.querySelectorAll('.bm').forEach(btn=>{btn.classList.toggle('sel',parseInt(btn.textContent)===m);});
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DASHBOARD
+   ═══════════════════════════════════════════════════════════════ */
+function renderDash(){
+  const now=nowM();
+  // Smoker status
+  document.getElementById('dash-smoker').innerHTML=`<div class="smoker-row">
+    <div class="smoker-chip sm-drum"><div class="smoker-icon">🔴</div><div class="smoker-name">Drum</div><div class="smoker-prots">Ribs<br>Glaze</div></div>
+    <div class="smoker-chip sm-wsm57"><div class="smoker-icon">🔵</div><div class="smoker-name">WSM 57"</div><div class="smoker-prots">Brisket (alto)<br>Chicken (basso)</div></div>
+    <div class="smoker-chip sm-wsm18"><div class="smoker-icon">🟢</div><div class="smoker-name">WSM 18"</div><div class="smoker-prots">Pork</div></div>
+  </div>`;
+
+  // Urgent
+  const urg=STEPS.filter(s=>!DONE[s.id]&&s.t>now&&s.t<=now+15).sort((a,b)=>a.t-b.t);
+  let uH='';
+  if(urg.length){
+    uH=`<div class="sec" style="color:var(--red)"><i class="ti ti-alert-triangle"></i>URGENTE — entro 15 min</div>`;
+    urg.forEach(s=>{
+      const ref=s.ref&&s.ref!=='—'?`<span class="urg-ref">(${s.ref})</span>`:'';
+      uH+=`<div class="urg-banner">
+        <div class="urg-row">
+          <span class="urg-time">${m2t(s.t)}</span>
+          <span class="urg-title">${s.ti}${ref}</span>
+          <i class="ti ${DONE[s.id]?'ti-circle-check':'ti-circle'} urg-done ${DONE[s.id]?'chk':''}" onclick="toggleDone('${s.id}')"></i>
+        </div>
+        <div class="urg-pills">${pillProt(s.pr)}${s.pe.map(p=>`<span class="pill p-person">${p}</span>`).join('')}</div>
+      </div>`;
+    });
+  }
+  document.getElementById('dash-urgent').innerHTML=uH;
+
+  // Next (big card + 2 mini)
+  const nxt=STEPS.filter(s=>!DONE[s.id]&&s.t>now&&s.t<=now+120).sort((a,b)=>a.t-b.t);
+  let nH='';
+  if(!nxt.length){nH=`<div class="card"><span style="color:var(--smoke);font-size:13px">Nessuna attività nei prossimi 2h.</span></div>`;}
+  else{
+    const f=nxt[0];
+    const ref=f.ref&&f.ref!=='—'?`<span class="next-big-ref">(${f.ref})</span>`:'';
+    nH=`<div class="next-big">
+      <div class="next-big-hdr">
+        <span class="next-big-time">${m2t(f.t)}</span>
+        <span class="next-big-title">${f.ti}${ref}</span>
+        <i class="ti ${DONE[f.id]?'ti-circle-check':'ti-circle'} next-big-done ${DONE[f.id]?'chk':''}" onclick="toggleDone('${f.id}')"></i>
+      </div>
+      ${f.temp?`<span class="temp"><i class="ti ti-thermometer"></i>${f.temp}</span>`:''}
+      <div class="pills">${pillProt(f.pr)}${f.pe.map(p=>`<span class="pill p-person">${p}</span>`).join('')}</div>
+      <span class="expand-btn" onclick="dxp('nbd0')"><i class="ti ti-chevron-down"></i> Dettagli</span>
+      <div class="next-big-det" id="nbd0">${(f.det||'').replace(/\n/g,'<br>')}</div>
+    </div>`;
+    nxt.slice(1,3).forEach(s=>{
+      const r2=s.ref&&s.ref!=='—'?`<span class="mini-ref">(${s.ref})</span>`:'';
+      nH+=`<div class="mini-card">
+        <span class="mini-time">${m2t(s.t)}</span>
+        <span class="mini-title">${s.ti}${r2}</span>
+        <i class="ti ${DONE[s.id]?'ti-circle-check':'ti-circle'} mini-done ${DONE[s.id]?'chk':''}" onclick="toggleDone('${s.id}')"></i>
+      </div>`;
+    });
+  }
+  document.getElementById('dash-next').innerHTML=nH;
+
+  // Active
+  const act=STEPS.filter(s=>!DONE[s.id]&&s.t<=now&&s.t>now-90).sort((a,b)=>b.t-a.t);
+  let aH='';
+  act.slice(0,5).forEach(s=>{
+    const r2=s.ref&&s.ref!=='—'?`<span class="act-ref">(${s.ref})</span>`:'';
+    aH+=`<div class="active-card">
+      <div class="pulse-dot"></div>
+      <div class="act-text"><div class="act-title">${s.ti}${r2}</div><div class="act-who">${s.pe.join(' · ')}</div></div>
+      <i class="ti ${DONE[s.id]?'ti-circle-check':'ti-circle'} act-done ${DONE[s.id]?'chk':''}" onclick="toggleDone('${s.id}')"></i>
+    </div>`;
+  });
+  if(!aH)aH=`<div class="card"><span style="color:var(--smoke);font-size:13px">Nessuno step in corso.</span></div>`;
+  document.getElementById('dash-active').innerHTML=aH;
+
+  // Deliveries
+  const prots=Object.keys(DT);
+  let dH='';
+  prots.forEach(pr=>{
+    const dt=DT[pr],diff=dt-now;
+    const hh=Math.floor(Math.abs(diff)/60),mm=Math.abs(diff)%60;
+    const lbl=diff<0?'✓ Consegnato':`${String(hh).padStart(2,'0')}h ${String(mm).padStart(2,'0')}m`;
+    const isDone=diff<0;
+    const isNext=diff>0&&diff===Math.min(...prots.map(p=>DT[p]-now).filter(d=>d>0));
+    const pc=PC[pr]||{color:'var(--smoke2)'};
+    dH+=`<div class="del-cell ${isDone?'del-done':isNext?'del-next':''}">
+      <div class="del-prot" style="color:${pc.color}">${NM[pr]}</div>
+      <div class="del-clock">${m2t(dt)}</div>
+      <div class="del-cd" style="color:${isDone?'var(--green)':diff<30?'var(--red)':diff<90?'var(--ember2)':'var(--smoke2)'}">${lbl}</div>
+    </div>`;
+  });
+  document.getElementById('dash-deliveries').innerHTML=dH;
+}
+function dxp(id){
+  const d=document.getElementById(id);d.classList.toggle('open');
+  const b=d.previousElementSibling;
+  b.innerHTML=d.classList.contains('open')?'<i class="ti ti-chevron-up"></i> Chiudi':'<i class="ti ti-chevron-down"></i> Dettagli';
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TIMELINE
+   ═══════════════════════════════════════════════════════════════ */
+function renderTimeline(){
+  const f=STEPS.filter(s=>(fprot==='all'||s.pr===fprot)&&(fpers==='all'||s.pe.includes(fpers))).sort((a,b)=>a.t-b.t);
+  document.getElementById('timeline-list').innerHTML=f.length?f.map(s=>stepCard(s)).join(''):`<div style="color:var(--smoke);font-size:13px;padding:10px 0">Nessuno step con questi filtri.</div>`;
+}
+function setFilter(type,val,btn){
+  if(type==='p')fprot=val;else fpers=val;
+  btn.closest('.filters').querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderTimeline();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PROTEINE
+   ═══════════════════════════════════════════════════════════════ */
+function renderProteine(){
+  const prots=Object.keys(DT),now=nowM();
+  document.getElementById('proteina-stats').innerHTML=prots.map(pr=>{
+    const dt=DT[pr],diff=dt-now,hh=Math.floor(Math.abs(diff)/60),mm=Math.abs(diff)%60;
+    const lbl=diff<0?'DONE':`${String(hh).padStart(2,'0')}h${String(mm).padStart(2,'0')}`;
+    const cur=STEPS.filter(s=>s.pr===pr&&!DONE[s.id]&&s.t<=now&&s.t>now-90);
+    const fase=cur.length?cur[cur.length-1].ti.substring(0,22)+'…':'—';
+    return`<div class="stat"><div class="stat-val">${lbl}</div><div class="stat-lbl">${NM[pr]} — ${m2t(dt)}</div><div class="stat-fase">${fase}</div></div>`;
+  }).join('');
+  document.getElementById('proteina-prog').innerHTML=prots.map(pr=>{
+    const ps=STEPS.filter(s=>s.pr===pr),done=ps.filter(s=>DONE[s.id]).length,pct=ps.length?Math.round(done/ps.length*100):0;
+    return`<div class="sec">${NM[pr]}</div><div class="card"><div class="prog-wrap"><span>${done}/${ps.length} step</span><span>${pct}%</span></div><div class="prog-bar"><div class="prog-fill" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CHECKLIST
+   ═══════════════════════════════════════════════════════════════ */
+function renderChecklist(){
+  let tot=0,done=0,html='';
+  CL.forEach((cat,ci)=>{
+    html+=`<div class="ck-cat">${cat.cat}</div><div class="card">`;
+    cat.items.forEach((item,ii)=>{
+      const k=`${ci}-${ii}`,ch=CHKSTATE[k]||false;
+      tot++;if(ch)done++;
+      const ref=item.r?`<span class="ck-ref">${item.r}</span>`:'';
+      html+=`<div class="ck-item"><input type="checkbox" id="ck-${k}" ${ch?'checked':''} onchange="toggleCk('${k}')"><label for="ck-${k}" class="${ch?'done':''}">${item.t}${ref}</label></div>`;
+    });
+    html+='</div>';
+  });
+  const pct=tot?Math.round(done/tot*100):0;
+  document.getElementById('checklist-wrap').innerHTML=`<div class="sec">Equipaggiamento <span style="color:var(--ember2);font-family:'DM Mono',monospace">${done}/${tot} — ${pct}%</span></div><div class="card" style="margin-bottom:12px"><div class="prog-bar" style="height:5px"><div class="prog-fill" style="width:${pct}%"></div></div></div>`+html;
+}
+function toggleCk(k){CHKSTATE[k]=!CHKSTATE[k];renderChecklist();}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATS
+   ═══════════════════════════════════════════════════════════════ */
+function renderStats(){
+  const ds=STEPS.filter(s=>DONE[s.id]);
+  const kpiEl=document.getElementById('stats-kpis');
+  if(!ds.length){
+    kpiEl.innerHTML=`<div class="kpi" style="grid-column:1/-1"><div class="kpi-val" style="color:var(--smoke);font-size:18px;">Nessun dato</div><div class="kpi-lbl">Completa step per vedere le performance</div></div>`;
+    document.getElementById('stats-tl').innerHTML='<span style="color:var(--smoke);font-size:13px">Nessun dato.</span>';
+    document.getElementById('pace-chart').innerHTML='';
+    return;
+  }
+  let tot=0,late=0,early=0,ontime=0;
+  ds.forEach(s=>{const d=CT[s.id]-s.t;tot+=d;if(d>0)late++;else if(d<0)early++;else ontime++;});
+  const avg=Math.round(tot/ds.length);
+  const avgStr=avg===0?'OK':avg>0?`+${avg}m`:`${avg}m`;
+  const avgColor=avg===0?'var(--green)':avg>0?'var(--red)':'var(--blue)';
+  kpiEl.innerHTML=`
+    <div class="kpi"><div class="kpi-val" style="color:${avgColor}">${avgStr}</div><div class="kpi-lbl">Scost. medio</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--green)">${ontime+early}</div><div class="kpi-lbl">In tempo/early</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--red)">${late}</div><div class="kpi-lbl">In ritardo</div></div>`;
+  const maxA=Math.max(...ds.map(s=>Math.abs(CT[s.id]-s.t)),1);
+  document.getElementById('stats-tl').innerHTML=ds.map(s=>{
+    const d=CT[s.id]-s.t,str=d===0?'OK':d>0?`+${d}m`:`${d}m`,color=d===0?'var(--green)':d>0?'var(--red)':'var(--blue)';
+    return`<div class="perf-row"><span class="perf-time">${m2t(s.t)}</span><span class="perf-name" title="${s.ti}">${s.ti.substring(0,32)}</span><div class="perf-bar-wrap"><div class="perf-bar-fill" style="width:${Math.min(100,Math.abs(d)/maxA*100).toFixed(0)}%;background:${color}"></div></div><span class="perf-diff" style="color:${color}">${str}</span></div>`;
+  }).join('');
+  document.getElementById('pace-chart').innerHTML=ds.map(s=>{
+    const d=CT[s.id]-s.t,h=Math.max(4,Math.round(Math.abs(d)/maxA*52));
+    return`<div class="pace-bar" style="height:${h}px;background:${d>0?'var(--red)':d<0?'var(--blue)':'var(--green)'}" title="${m2t(s.t)} (${d>0?'+':''}${d}m)"></div>`;
+  }).join('');
+}
+function renderKCBS(){
+  const prots=[{k:'ch',l:'Chicken',c:'#93c5fd'},{k:'rb',l:'Ribs',c:'#fca5a5'},{k:'pk',l:'Pork',c:'#86efac'},{k:'bk',l:'Brisket',c:'#fde68a'}];
+  const el=document.getElementById('kcbs-proteins');if(!el)return;
+  el.innerHTML=prots.map(({k,l,c})=>`
+    <div class="kcbs-prot-title" style="color:${c}">${l}</div>
+    <div class="kcbs-row">
+      <div class="kcbs-field"><label>Appearance</label><input type="number" id="k-${k}-app" min="0" max="45" value="35" oninput="calcKCBS()"></div>
+      <div class="kcbs-field"><label>Taste</label><input type="number" id="k-${k}-tas" min="0" max="45" value="35" oninput="calcKCBS()"></div>
+      <div class="kcbs-field"><label>Tenderness</label><input type="number" id="k-${k}-ten" min="0" max="45" value="35" oninput="calcKCBS()"></div>
+    </div>
+    <div class="kcbs-sub">Totale ${l}: <span id="k-${k}-res" style="color:var(--ember2);font-family:monospace;font-weight:bold">0.0000</span></div>
+    <hr style="border:0;border-top:1px solid rgba(255,255,255,.05);margin:8px 0 12px">
+  `).join('');
+  calcKCBS();
+}
+function calcKCBS(){
+  const gv=id=>{const e=document.getElementById(id);return e?Math.min(45,Math.max(0,Number(e.value)||0)):0;};
+  const ca=0.5714,ct=2.2924,cn=1.1428;
+  let total=0;
+  ['ch','rb','pk','bk'].forEach(k=>{
+    const v=gv(`k-${k}-app`)*ca+gv(`k-${k}-tas`)*ct+gv(`k-${k}-ten`)*cn;
+    total+=v;const el=document.getElementById(`k-${k}-res`);if(el)el.textContent=v.toFixed(4);
+  });
+  const t=document.getElementById('kcbs-total');if(t)t.textContent=total.toFixed(4);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CLOCK & ALERTS
+   ═══════════════════════════════════════════════════════════════ */
+function tick(){
+  const n=new Date();
+  const el=document.getElementById('live-clock');
+  if(el)el.textContent=String(n.getHours()).padStart(2,'0')+':'+String(n.getMinutes()).padStart(2,'0');
+  renderTimerBar();
+  if(STEPS.length){
+    checkAlerts();
+    const active=document.querySelector('#screen-main .content:not([style*="display: none"]):not([style*="display:none"])');
+    const id=active?active.id.replace('pane-',''):'';
+    if(id==='dash')renderDash();
+    if(id==='proteine')renderProteine();
+  }
+}
+function checkAlerts(){
+  const now=nowM();
+  STEPS.forEach(s=>{
+    if(DONE[s.id])return;
+    const cfg=acfg(s.id);if(!cfg.on)return;
+    if(s.t-now===cfg.min){
+      playAlert(s.t-now<=5);
+      triggerAlert(`${m2t(s.t)} — ${s.ti}`,`Tra ${cfg.min} min\n${NM[s.pr]} — ${s.pe.join(', ')}${s.ref&&s.ref!=='—'?'\nRif. passo ('+s.ref+')':''}`);
+    }
+  });
+}
+function triggerAlert(title,body){
+  document.getElementById('modal-title').textContent=title;
+  document.getElementById('modal-body').textContent=body;
+  document.getElementById('modal').style.display='flex';
+}
+function closeModal(){document.getElementById('modal').style.display='none';}
+function demoAlert(){
+  if(!STEPS.length){triggerAlert('Demo','Avvia prima una gara.');return;}
+  const s=STEPS[Math.floor(Math.random()*Math.min(8,STEPS.length))];
+  playAlert(false);
+  triggerAlert(s.ti,`Demo alert · passo (${s.ref||'—'})\n${NM[s.pr]} — ${s.pe.join(', ')}\nOrario: ${m2t(s.t)}`);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDER ALL
+   ═══════════════════════════════════════════════════════════════ */
+function renderAll(){
+  renderTimerBar();
+  const vis=id=>{const p=document.getElementById('pane-'+id);return p&&p.style.display!=='none';};
+  if(vis('dash'))renderDash();
+  if(vis('timeline'))renderTimeline();
+  if(vis('proteine'))renderProteine();
+  if(vis('stats')){renderStats();renderKCBS();}
+  renderChecklist();
+}
+
+/* ─── INIT ─────────────────────────────────────── */
+tick();
+</script>
+</body>
+</html>
